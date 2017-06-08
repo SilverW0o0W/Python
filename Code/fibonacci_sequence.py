@@ -13,6 +13,3 @@ def fib(max_number):
         before, after = after, before + after
         number = number + 1
     return 'done'
-
-for n in fib(5):
-    print(n)
