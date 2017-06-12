@@ -16,10 +16,22 @@ class Student(Person):
         """Get id value"""
         return self.__id
 
+    def set_id(self, id_number):
+        """Set id value"""
+        self.__id = id_number
+
     def get_grade(self):
         """Get grade value"""
         return self.__grade
 
+    def set_grade(self, grade):
+        """Set grade value"""
+        self.__grade = grade
+
     def get_class(self):
         """Get class value"""
         return self.__class
+
+    def set_class(self, class_number):
+        """Set class value"""
+        self.__class = class_number
