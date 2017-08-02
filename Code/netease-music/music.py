@@ -48,3 +48,38 @@ class SongBase(object):
         Get album id. Type: list str
         """
         return self.__album_id
+
+
+class SongComment(SongBase):
+    """
+    For comment content uncomplete
+    """
+
+    def __init__(self):
+        SongBase.__init__()
+        self.__comment_total = 0
+        self.__offset = 0
+
+    def set_comment_total(self, comment_total):
+        """
+        Set comment total. Type: number
+        """
+        self.__comment_total = comment_total
+
+    def get_comment_total(self):
+        """
+        Get comment total. Type: number
+        """
+        return self.__comment_total
+
+    def set_offset(self, offset):
+        """
+        Set comment offset. Type: number
+        """
+        self.__offset = offset
+
+    def get_offset(self):
+        """
+        Get comment offset. Type: number
+        """
+        return self.__offset
