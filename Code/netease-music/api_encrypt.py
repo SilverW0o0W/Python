@@ -6,7 +6,10 @@ This is api encrypt
 import base64
 import json
 import requests
+
 from Crypto.Cipher import AES
+
+from music import SongComment
 
 headers = {
     'Cookie': 'appver=1.5.0.75771;',
@@ -35,16 +38,11 @@ def get_encSecKey():
 
 def AES_encrypt(text, key, iv):
     pad = 16 - len(text) % 16
-    temp = pad * str(pad)
-    if isinstance(text, str):
-        text = text + temp
-    else:
-        text = str(text, encoding="utf-8") + temp
+    text = text + pad * chr(pad)
     encryptor = AES.new(key, AES.MODE_CBC, iv)
     encrypt_text = encryptor.encrypt(text)
     encrypt_text = base64.b64encode(encrypt_text)
     return encrypt_text
-
 
 def get_json(url, params, encSecKey):
     print(params)
@@ -58,15 +56,18 @@ def get_json(url, params, encSecKey):
     response = requests.post(url, headers=headers, data=data)
     return response.content
 
-
 if __name__ == "__main__":
     url = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_26584163/?csrf_token="
     params = get_params()
-    params = str(params, encoding="utf-8")
     encSecKey = get_encSecKey()
     json_text = get_json(url, params, encSecKey)
-    json_text = str(json_text, encoding="utf-8")
     json_dict = json.loads(json_text)
+    
+    # comment = SongComment()
+    # comment.set_comment_total(json_dict['total'])
     print(json_dict['total'])
+
+    # print(comment.get_comment_total())
+
     for item in json_dict['comments']:
         print(item['content'])

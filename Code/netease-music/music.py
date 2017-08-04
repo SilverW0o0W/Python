@@ -59,6 +59,7 @@ class SongComment(SongBase):
         SongBase.__init__()
         self.__comment_total = 0
         self.__offset = 0
+        self.__comment_list = '0'
 
     def set_comment_total(self, comment_total):
         """
@@ -83,3 +84,15 @@ class SongComment(SongBase):
         Get comment offset. Type: number
         """
         return self.__offset
+
+    def set_comment_list(self, comment_list):
+        """
+        Set comment list. Type: list str
+        """
+        self.__comment_list = comment_list
+
+    def get_comment_list(self):
+        """
+        Get comment list. Type: list str
+        """
+        return self.__comment_list
