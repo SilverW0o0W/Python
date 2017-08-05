@@ -47,8 +47,8 @@ def AES_encrypt(text, key, iv):
 def get_json(url, params, encSecKey):
     print(params)
     print(encSecKey)
-    params = 'v163/FTKJIkDkIfOnrcHiMNYPSJkJwJaoPHyhA3wPSGoOLsQqaYIQ/BAOyOypuseFDIifCsjY8j1ip4knS4VTEcA/8ljXREmwBxGl9m3Pfei2sqItWPsMIy/jvjFF8sQKxc73boUk9pV72nRYz6WcbJjUvSr+xkiNj5hx0riXBR3YkCAJqn/zk5qzwQ6C/Ss'
-    encSecKey = '1ca4a82046a2a494252938a7ab2f55a643adeae94a3d7af04545eaa642b450a8072c27946f58d97b632f175defb15b8f176e2956e9b328b9f3de0dc4c51066945980baf796d17f5bcd8f031d016d433168dec1f5a2899e6534f416685a1cb13042de75aac3d10cf06c25654aa2de5f9da472356567f97dd51208c6055b02863f'
+    # params = 'v163/FTKJIkDkIfOnrcHiMNYPSJkJwJaoPHyhA3wPSGoOLsQqaYIQ/BAOyOypuseFDIifCsjY8j1ip4knS4VTEcA/8ljXREmwBxGl9m3Pfei2sqItWPsMIy/jvjFF8sQKxc73boUk9pV72nRYz6WcbJjUvSr+xkiNj5hx0riXBR3YkCAJqn/zk5qzwQ6C/Ss'
+    # encSecKey = '1ca4a82046a2a494252938a7ab2f55a643adeae94a3d7af04545eaa642b450a8072c27946f58d97b632f175defb15b8f176e2956e9b328b9f3de0dc4c51066945980baf796d17f5bcd8f031d016d433168dec1f5a2899e6534f416685a1cb13042de75aac3d10cf06c25654aa2de5f9da472356567f97dd51208c6055b02863f'
     data = {
         "params": params,
         "encSecKey": encSecKey
