@@ -1,17 +1,17 @@
 """
 This is music information class
 """
-
+#coding = utf-8
 
 class SongBase(object):
     """
     For base song information
     """
 
-    def __init__(self):
-        self.__song_id = '00000000'
-        self.__artist_ids = ['00000']
-        self.__album_id = '0000000'
+    def __init__(self, song_id='00000000', artist_ids='000000', album_id='0000000'):
+        self.__song_id = song_id
+        self.__artist_ids = artist_ids
+        self.__album_id = album_id
 
     def set_song_id(self, song_id):
         """
@@ -55,8 +55,8 @@ class SongComment(SongBase):
     For comment content uncomplete
     """
 
-    def __init__(self):
-        SongBase.__init__()
+    def __init__(self, song_id='00000000', artist_ids='000000', album_id='0000000'):
+        SongBase.__init__(self, song_id, artist_ids, album_id)
         self.__comment_total = 0
         self.__offset = 0
         self.__comment_list = '0'
