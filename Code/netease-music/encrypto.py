@@ -38,7 +38,7 @@ def create_secret_key(size):
     return ''.join(map(lambda xx: (hex(ord(xx))[2:]), os.urandom(size)))[0:16]
 
 
-def gen_data():
+def generate_data():
     """
     Generate data
     """

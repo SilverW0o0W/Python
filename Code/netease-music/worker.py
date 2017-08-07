@@ -5,8 +5,9 @@ This is the main
 
 import json
 import requests
-from encrypto import gen_data
+from encrypto import generate_data
 from music import SongComment
+
 
 class Worker(object):
     """
@@ -23,6 +24,8 @@ class Worker(object):
         'Referer': 'http://music.163.com/'
     }
 
+    __data_list = []
+
     def reset_song_id(self, song_id):
         """
         Reset comment instance
@@ -35,11 +38,14 @@ class Worker(object):
         """
         return self.__headers
 
-    def get_request_data(self):
+    def get_request_data(self, once = True):
         """
         Get request encrypt data
         """
-        return gen_data()
+        if once:
+            return generate_data()
+        else:
+            return generate_data()
 
     def get_song_comment(self):
         """
@@ -72,5 +78,6 @@ class Worker(object):
 
 
 worker = Worker('26584163')
-comment = worker.get_response_comment()
-print comment.get_comment_total()
+for i in range(10):
+    comment = worker.get_response_comment()
+    print comment.get_comment_total()
