@@ -9,7 +9,7 @@ from encrypto import generate_data
 from music import SongComment
 
 
-class Worker(object):
+class CommentSpider(object):
     """
     Spider part
     """
@@ -90,9 +90,3 @@ class Worker(object):
         self.__comment.set_comment_total(content['total'])
         self.__comment.set_comment_list(content['comments'])
         return self.__comment
-
-
-worker = Worker('26584163')
-for i in range(11):
-    comment = worker.get_response_comment()
-    print comment.get_comment_total()
