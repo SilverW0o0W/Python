@@ -24,6 +24,10 @@ class Worker(object):
         'Referer': 'http://music.163.com/'
     }
 
+    __DATA_MAX_LOOP = 10
+    __DATA_MAX_CACHE = 10
+    __data_loop = __DATA_MAX_LOOP
+    __data_current = 0
     __data_list = []
 
     def reset_song_id(self, song_id):
@@ -38,14 +42,25 @@ class Worker(object):
         """
         return self.__headers
 
-    def get_request_data(self, once = True):
+    def get_request_data(self, once=True):
         """
         Get request encrypt data
         """
         if once:
             return generate_data()
         else:
-            return generate_data()
+            if self.__data_current >= self. __DATA_MAX_CACHE:
+                self.__data_current = 0
+                self.__data_loop += 1
+            if self.__data_loop >= self. __DATA_MAX_LOOP:
+                self.__data_list[:] = []
+                for i in range(self.__DATA_MAX_CACHE):
+                    self.__data_list.append(generate_data())
+                self.__data_loop = 0
+                self.__data_current = 0
+            data = self.__data_list[self.__data_current]
+            self.__data_current += 1
+            return data
 
     def get_song_comment(self):
         """
@@ -70,7 +85,7 @@ class Worker(object):
         Send request and analysis response
         """
         response = self.send_request(self.get_request_url(self.__comment.get_song_id()),
-                                     self.get_request_headers(), self.get_request_data())
+                                     self.get_request_headers(), self.get_request_data(False))
         content = json.loads(response.content)
         self.__comment.set_comment_total(content['total'])
         self.__comment.set_comment_list(content['comments'])
@@ -78,6 +93,6 @@ class Worker(object):
 
 
 worker = Worker('26584163')
-for i in range(10):
+for i in range(11):
     comment = worker.get_response_comment()
     print comment.get_comment_total()
