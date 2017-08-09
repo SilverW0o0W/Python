@@ -1,7 +1,7 @@
+# coding=utf-8
 """
 This is the main
 """
-# coding=utf-8
 
 import json
 import requests

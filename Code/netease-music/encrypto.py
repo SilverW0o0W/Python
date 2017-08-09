@@ -1,7 +1,8 @@
+# coding=utf-8
 """
 This is the major encrypto algorithm
 """
-# coding=utf-8
+
 import os
 import base64
 import json

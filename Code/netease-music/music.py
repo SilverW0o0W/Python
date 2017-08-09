@@ -1,7 +1,7 @@
+#coding = utf-8
 """
 This is music information class
 """
-#coding = utf-8
 
 class SongBase(object):
     """
