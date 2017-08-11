@@ -20,7 +20,8 @@ class ProxySpider(object):
 
     __db_path = 'proxy_ip.db'
     __db_conn = None
-    __db_sql_create_table = 'create table proxy_ip(id INT primary key, ip VARCHAR(20), port VARCHAR(10),method TINYINT,available TINYINT)'
+    __db_sql_create_table = 'create table proxy_ip(id INT primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT)'
+    __db_sql_insert = 'insert into proxy_ip values(?, ?, ?, ?)'
 
     def send_check_request(self, proxy_data, check_url):
         """
@@ -59,6 +60,31 @@ class ProxySpider(object):
         check_url = self.__check_http_url if is_https else self.__check_https_url
         return self.send_check_request(proxy_data, check_url)
 
+    def insert_proxy_db(self, proxy_ip):
+        """
+        Insert proxy ip info to sqlite db file.
+        """
+        sql = self.__db_sql_insert
+        params_list = (proxy_ip.get_ip(), proxy_ip.get_port(),
+                       1 if proxy_ip.get_is_https() else 0, 1 if proxy_ip.get_available() else 0)
+        return self.sql_execute(sql, params_list)
+
+    def init_db(self):
+        """
+        Initialize sqlite db.
+        """
+        try:
+            db_exist = self.establish_db_onnection()
+            if not db_exist:
+                # Create db table
+                return self.sql_execute(self.__db_sql_create_table)
+            return True
+        except sqlite3.DatabaseError:
+            return False
+        finally:
+            if self.__db_conn != None:
+                self.__db_conn.close()
+
     def establish_db_onnection(self):
         """
         Establish sqlite connection. If it don't exist, create the db file.
@@ -68,13 +94,22 @@ class ProxySpider(object):
         self.__db_conn = sqlite3.connect(self.__db_path)
         return is_exist
 
-    def create_db_table(self, sql=__db_sql_create_table):
+    def sql_execute(self, sql, params_list=None):
         """
-        Create the proxy ip table.
+        Execute sqlite sql.
         """
-        cursor = self.__db_conn.cursor()
-        cursor.execute(sql)
-        cursor.close()
+        cursor = None
+        try:
+            cursor = self.__db_conn.cursor()
+            if params_list is None:
+                cursor.execute(sql)
+            else:
+                cursor.execute(sql, params_list)
+            return True
+        except sqlite3.DatabaseError:
+            return False
+        finally:
+            cursor.close()
 
 
 class ProxyIP(object):
@@ -82,11 +117,41 @@ class ProxyIP(object):
     This is the class for ip information.
     """
 
-    def __init__(self, ip='', port='', is_https=False, available=False):
+    def __init__(self, ip, port, is_https, available=False):
         self.__ip = ip
         self.__port = port
         self.__is_https = is_https
         self.__available = available
+
+    def set_available(self, available):
+        """
+        Set proxy ip available
+        """
+        self.__available = available
+
+    def get_ip(self):
+        """
+        Get ip
+        """
+        return self.__ip
+
+    def get_port(self):
+        """
+        Get port
+        """
+        return self.__port
+
+    def get_is_https(self):
+        """
+        Get is https method
+        """
+        return self.__is_https
+
+    def get_available(self):
+        """
+        Get available
+        """
+        return self.__available
 
 
 spider = ProxySpider()
