@@ -51,23 +51,27 @@ class ProxySpider(object):
         except urllib2.URLError:
             self.__thread_result = False
 
-    def check_proxy(self, is_https, ip_port):
+    def check_proxy(self, proxy_ip):
         """
         Check proxy available
         """
-        transfer_method = 'https' if is_https else 'http'
+        transfer_method = 'https' if proxy_ip.is_https else 'http'
+        ip_port = proxy_ip.ip + ':' + proxy_ip.port
         proxy_data = {transfer_method: ip_port}
-        check_url = self.__check_http_url if is_https else self.__check_https_url
-        return self.send_check_request(proxy_data, check_url)
+        check_url = self.__check_https_url if proxy_ip.is_https else self.__check_http_url
+        proxy_ip.available = self.send_check_request(proxy_data, check_url)
+        return proxy_ip.available
 
-    def insert_proxy_db(self, proxy_ip):
+    def add_proxy(self, proxy_ip):
         """
-        Insert proxy ip info to sqlite db file.
+        Check proxy available and add into sqlite db.
         """
-        sql = self.__db_sql_insert
-        params_list = (proxy_ip.get_ip(), proxy_ip.get_port(),
-                       1 if proxy_ip.get_is_https() else 0, 1 if proxy_ip.get_available() else 0)
-        return self.sql_execute(sql, params_list)
+        if self.check_proxy(proxy_ip):
+            if check_proxy_exist(proxy_ip) == False:
+                return
+
+    def check_proxy_exist(self,proxy_ip):
+        pass
 
     def init_db(self):
         """
@@ -96,20 +100,28 @@ class ProxySpider(object):
 
     def sql_execute(self, sql, params_list=None):
         """
-        Execute sqlite sql.
+        Execute sqlite sql. For write operation
         """
         cursor = None
         try:
             cursor = self.__db_conn.cursor()
             if params_list is None:
-                cursor.execute(sql)
+                return cursor.execute(sql)
             else:
-                cursor.execute(sql, params_list)
-            return True
+                return cursor.execute(sql, params_list)
         except sqlite3.DatabaseError:
-            return False
+            return 0
         finally:
             cursor.close()
+
+    def insert_proxy_db(self, proxy_ip):
+        """
+        Insert proxy ip info to sqlite db file.
+        """
+        sql = self.__db_sql_insert
+        params_list = (proxy_ip.ip, proxy_ip.port,
+                       1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
+        return self.sql_execute(sql, params_list)
 
 
 class ProxyIP(object):
@@ -118,41 +130,18 @@ class ProxyIP(object):
     """
 
     def __init__(self, ip, port, is_https, available=False):
-        self.__ip = ip
-        self.__port = port
-        self.__is_https = is_https
-        self.__available = available
+        self.ip = ip
+        self.port = port
+        self.is_https = is_https
+        self.available = available
 
-    def set_available(self, available):
+    def get_ip_port(self):
         """
-        Set proxy ip available
+        Get ip:port string.
         """
-        self.__available = available
-
-    def get_ip(self):
-        """
-        Get ip
-        """
-        return self.__ip
-
-    def get_port(self):
-        """
-        Get port
-        """
-        return self.__port
-
-    def get_is_https(self):
-        """
-        Get is https method
-        """
-        return self.__is_https
-
-    def get_available(self):
-        """
-        Get available
-        """
-        return self.__available
+        return self.ip + ':' + self.port
 
 
 spider = ProxySpider()
-print spider.check_proxy(False, '221.201.81.248:80')
+proxy = ProxyIP('221.201.81.248', '80', False, False)
+print spider.check_proxy(proxy)
