@@ -9,6 +9,8 @@ import urllib2
 import os
 import sqlite3
 
+from proxy_controller import ProxyIP
+
 
 class ProxyController(object):
     """
@@ -164,25 +166,6 @@ class ProxyController(object):
             return None
         finally:
             cursor.close()
-
-
-class ProxyIP(object):
-    """
-    This is the class for ip information.
-    """
-
-    def __init__(self, ip, port, is_https, available=False):
-        self.ip = ip
-        self.port = port
-        self.is_https = is_https
-        self.available = available
-
-    def get_ip_port(self):
-        """
-        Get ip:port string.
-        """
-        return self.ip + ':' + self.port
-
 
 spider = ProxyController()
 proxy = ProxyIP('175.165.109.207', '8118', False, False)
