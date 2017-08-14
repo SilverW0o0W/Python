@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-This is for proxy server, avoid to ban the own ip.
+This is for controlling proxy ip
 """
 
 import threading
