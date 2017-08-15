@@ -3,6 +3,7 @@
 This is for controlling proxy ip
 """
 
+import time
 import threading
 import urllib2
 
@@ -20,14 +21,16 @@ class ProxyController(object):
     __check_http_url = 'http://silvercodingcat.com/python/2017/08/09/Proxy-Spider-Check/'
     __check_https_url = ''
     __thread_timeout = 15
+    __thread_list_split = 5
     __thread_result = threading.local()
 
     __proxy_spider = ProxySpider()
     __proxy_spider_page = 2
 
     __db_path = 'proxy_ip.db'
-    __db_conn = None
+    __db_connection = None
     __db_min_storage = 10
+    __db_thread_connection = threading.local()
 
     __sql_create_table = 'create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT)'
     __sql_insert_ip = 'insert into proxy_ip values(null, ?, ?, ?, ?)'
@@ -67,7 +70,7 @@ class ProxyController(object):
             print error
         except urllib2.URLError, error:
             self.__thread_result = False
-            print error
+            print error.message
 
     def check_proxy(self, proxy_ip):
         """
@@ -95,6 +98,25 @@ class ProxyController(object):
         """
         Check proxy available and add into sqlite db.
         """
+        split_num = self.__thread_list_split
+
+        times = len(proxy_ip_list) // split_num
+        proxy_ip_split_list = []
+        for i in range(times + 1):
+            pre = i * split_num
+            last = (i + 1) * split_num if i < times else len(proxy_ip_list)
+            proxy_ip_split_list.append(proxy_ip_list[pre:last])
+        for list_thread in proxy_ip_split_list:
+            add_thread = threading.Thread(
+                target=self.add_proxy_list_thread, args=(list_thread,))
+            add_thread.start()
+            add_thread.join()
+        print 'add proxy done'
+
+    def add_proxy_list_thread(self, proxy_ip_list):
+        """
+        Muiti-Threading check proxy.
+        """
         insert_list = []
         for proxy_ip in proxy_ip_list:
             if self.check_proxy(proxy_ip):
@@ -114,6 +136,8 @@ class ProxyController(object):
             ip_temp = ProxyIP(ip_value[1], ip_value[2],
                               ip_value[3] == 1, ip_value[4] == 1)
             ip_list.append(ip_temp)
+        while True:
+            time.sleep(100)
         return ip_list
 
     def insert_proxy_db(self, proxy_ip):
@@ -135,7 +159,7 @@ class ProxyController(object):
             ip_params = (proxy_ip.ip, proxy_ip.port,
                          1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
             ip_params_list.append(ip_params)
-        return self.sql_write_list(sql, ip_params_list)
+        return self.sql_write_list(sql, ip_params_list, False)
 
     def select_proxy_db(self, count=10):
         """
@@ -144,7 +168,7 @@ class ProxyController(object):
         params_list = (count)
         # result_set = self.sql_read(self.__sql_select_ip_all, params_list)
         result_set = self.sql_read(self.__sql_select_ip_all)
-        if result_set == None or len(result_set) < self.__db_min_storage:
+        if result_set is None or len(result_set) < self.__db_min_storage:
             crawl_thread = threading.Thread(target=self.crawl_proxy_ip)
             print 'Crawl proxy start'
             crawl_thread.start()
@@ -159,15 +183,16 @@ class ProxyController(object):
         Check proxy existed in sqlite
         """
         params_list = (proxy_ip.ip, proxy_ip.port,)
-        result_set = self.sql_read(self.__sql_select_ip_exist, params_list)
-        return result_set != None and len(result_set) > 0
+        result_set = self.sql_read(
+            self.__sql_select_ip_exist, params_list, False)
+        return result_set is not None and len(result_set) > 0
 
-    def init_db(self):
+    def init_db(self, is_main_thread=True):
         """
         Initialize sqlite db.
         """
         try:
-            db_exist = self.establish_db_connection()
+            db_exist = self.establish_db_connection(is_main_thread)
             if not db_exist:
                 # Create db table
                 return self.sql_write(self.__sql_create_table)
@@ -175,78 +200,112 @@ class ProxyController(object):
         except sqlite3.DatabaseError:
             return False
 
-    def establish_db_connection(self):
+    def establish_db_connection(self, is_main_thread=True):
         """
         Establish sqlite connection. If it don't exist, create the db file.
         Return: The file is existed before exstablish connection.
         """
         is_exist = os.path.exists(self.__db_path)
-        self.__db_conn = sqlite3.connect(self.__db_path)
+        if is_main_thread:
+            self.__db_connection = sqlite3.connect(self.__db_path)
+        else:
+            self.__db_thread_connection = sqlite3.connect(self.__db_path)
         return is_exist
 
     def dispose_db_connection(self):
         """
         Close db connection
         """
-        if self.__db_conn != None:
-            self.__db_conn.close()
-            self.__db_conn = None
+        if self.__db_connection != None:
+            self.__db_connection.close()
+            self.__db_connection = None
 
-    def sql_write(self, sql, params_list=None):
+    def sql_write(self, sql, params_list=None, is_main_thread=True):
         """
         Execute sqlite sql. For write.
         """
         cursor = None
+        connect = None
         try:
-            cursor = self.__db_conn.cursor()
+            if is_main_thread:
+                connect = self.__db_connection
+            else:
+                self.establish_db_connection(False)
+                connect = self.__db_thread_connection
+            cursor = connect.cursor()
             if params_list is None:
                 result = cursor.execute(sql)
             else:
                 result = cursor.execute(sql, params_list)
-            self.__db_conn.commit()
+            connect.commit()
             return result
-        except sqlite3.DatabaseError:
+        except sqlite3.DatabaseError, db_error:
+            print db_error.message
             return None
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+            if is_main_thread is False and connect is not None:
+                connect.close()
 
-    def sql_write_list(self, sql, params_list):
+    def sql_write_list(self, sql, params_list, is_main_thread=True):
         """
         Execute sqlite sql. For write.
         """
-        cursor = self.__db_conn.cursor()
+        connect = None
+        cursor = None
         row_num = 0
         try:
+            if is_main_thread:
+                connect = self.__db_connection
+            else:
+                self.establish_db_connection(False)
+                connect = self.__db_thread_connection
+            cursor = connect.cursor()
             for params in params_list:
                 try:
                     result = cursor.execute(sql, params)
                     row_num += result.rowcount
                 except sqlite3.DatabaseError:
                     continue
-            self.__db_conn.commit()
+            connect.commit()
             return row_num
-        except sqlite3.DatabaseError:
+        except sqlite3.DatabaseError, db_error:
+            print db_error.message
             return None
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+            if is_main_thread is False and connect is not None:
+                connect.close()
 
-    def sql_read(self, sql, params_list=None):
+    def sql_read(self, sql, params_list=None, is_main_thread=True):
         """
         Execute sqlite sql. For read.
         """
+        connect = None
         cursor = None
         try:
-            cursor = self.__db_conn.cursor()
+            if is_main_thread:
+                connect = self.__db_connection
+            else:
+                self.establish_db_connection(False)
+                connect = self.__db_thread_connection
+            cursor = connect.cursor()
             if params_list is None:
                 cursor.execute(sql)
             else:
                 cursor.execute(sql, params_list)
             result_set = cursor.fetchall()
             return result_set
-        except sqlite3.DatabaseError:
+        except sqlite3.DatabaseError, db_error:
+            print db_error.message
             return None
         finally:
-            cursor.close()
+            if cursor is not None:
+                cursor.close()
+            if is_main_thread is False and connect is not None:
+                connect.close()
 
     def crawl_proxy_ip(self):
         """
@@ -264,4 +323,6 @@ class ProxyController(object):
 controller = ProxyController()
 # proxy = ProxyIP('182.138.249.117', '8118', False, False)
 # print controller.add_proxy(proxy)
-controller.get_proxy()
+ip_list = controller.get_proxy()
+for ip in ip_list:
+    print ip.ip + '\t' + ip.port
