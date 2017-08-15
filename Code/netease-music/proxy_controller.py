@@ -9,7 +9,8 @@ import urllib2
 import os
 import sqlite3
 
-from proxy_controller import ProxyIP
+from proxy_spider import ProxyIP
+from proxy_spider import ProxySpider
 
 
 class ProxyController(object):
@@ -21,11 +22,17 @@ class ProxyController(object):
     __thread_timeout = 15
     __thread_result = threading.local()
 
+    __proxy_spider = ProxySpider()
+    __proxy_spider_page = 2
+
     __db_path = 'proxy_ip.db'
     __db_conn = None
+    __db_min_storage = 10
+
     __sql_create_table = 'create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT)'
     __sql_insert_ip = 'insert into proxy_ip values(null, ?, ?, ?, ?)'
     __sql_select_ip_exist = 'select * from proxy_ip where ip = ? and port = ?'
+    __sql_select_ip_all = 'select * from proxy_ip'
 
     def __init__(self):
         self.init_db()
@@ -73,15 +80,6 @@ class ProxyController(object):
         proxy_ip.available = self.send_check_request(proxy_data, check_url)
         return proxy_ip.available
 
-    def insert_proxy_db(self, proxy_ip):
-        """
-        Insert proxy ip info to sqlite db file.
-        """
-        sql = self.__sql_insert_ip
-        params_list = (proxy_ip.ip, proxy_ip.port,
-                       1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
-        return self.sql_write(sql, params_list)
-
     def add_proxy(self, proxy_ip):
         """
         Check proxy available and add into sqlite db.
@@ -92,6 +90,69 @@ class ProxyController(object):
             else:
                 self.insert_proxy_db(proxy_ip)
                 return True
+
+    def add_proxy_list(self, proxy_ip_list):
+        """
+        Check proxy available and add into sqlite db.
+        """
+        insert_list = []
+        for proxy_ip in proxy_ip_list:
+            if self.check_proxy(proxy_ip):
+                if self.check_proxy_exist(proxy_ip):
+                    continue
+                else:
+                    insert_list.append(proxy_ip)
+        self.insert_proxy_list_db(insert_list)
+
+    def get_proxy(self, count=10):
+        """
+        Get proxy list from splite and check available
+        """
+        ip_value_list = self.select_proxy_db()
+        ip_list = []
+        for ip_value in ip_value_list:
+            ip_temp = ProxyIP(ip_value[1], ip_value[2],
+                              ip_value[3] == 1, ip_value[4] == 1)
+            ip_list.append(ip_temp)
+        return ip_list
+
+    def insert_proxy_db(self, proxy_ip):
+        """
+        Insert proxy ip info to sqlite db file.
+        """
+        sql = self.__sql_insert_ip
+        params_list = (proxy_ip.ip, proxy_ip.port,
+                       1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
+        return self.sql_write(sql, params_list)
+
+    def insert_proxy_list_db(self, proxy_ip_list):
+        """
+        Insert proxy ip info to sqlite db file.
+        """
+        ip_params_list = []
+        for proxy_ip in proxy_ip_list:
+            sql = self.__sql_insert_ip
+            ip_params = (proxy_ip.ip, proxy_ip.port,
+                         1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
+            ip_params_list.append(ip_params)
+        return self.sql_write_list(sql, ip_params_list)
+
+    def select_proxy_db(self, count=10):
+        """
+        Select proxy ip in sqlite
+        """
+        params_list = (count)
+        # result_set = self.sql_read(self.__sql_select_ip_all, params_list)
+        result_set = self.sql_read(self.__sql_select_ip_all)
+        if result_set == None or len(result_set) < self.__db_min_storage:
+            crawl_thread = threading.Thread(target=self.crawl_proxy_ip)
+            print 'Crawl proxy start'
+            crawl_thread.start()
+        proxy_ip_list = []
+        for result in result_set:
+            proxy_ip = result
+            proxy_ip_list.append(proxy_ip)
+        return proxy_ip_list
 
     def check_proxy_exist(self, proxy_ip):
         """
@@ -149,6 +210,26 @@ class ProxyController(object):
         finally:
             cursor.close()
 
+    def sql_write_list(self, sql, params_list):
+        """
+        Execute sqlite sql. For write.
+        """
+        cursor = self.__db_conn.cursor()
+        row_num = 0
+        try:
+            for params in params_list:
+                try:
+                    result = cursor.execute(sql, params)
+                    row_num += result.rowcount
+                except sqlite3.DatabaseError:
+                    continue
+            self.__db_conn.commit()
+            return row_num
+        except sqlite3.DatabaseError:
+            return None
+        finally:
+            cursor.close()
+
     def sql_read(self, sql, params_list=None):
         """
         Execute sqlite sql. For read.
@@ -157,16 +238,30 @@ class ProxyController(object):
         try:
             cursor = self.__db_conn.cursor()
             if params_list is None:
-                result = cursor.execute(sql)
+                cursor.execute(sql)
             else:
-                result = cursor.execute(sql, params_list)
-            result_set = result.fetchall()
+                cursor.execute(sql, params_list)
+            result_set = cursor.fetchall()
             return result_set
         except sqlite3.DatabaseError:
             return None
         finally:
             cursor.close()
 
-spider = ProxyController()
-proxy = ProxyIP('175.165.109.207', '8118', False, False)
-print spider.add_proxy(proxy)
+    def crawl_proxy_ip(self):
+        """
+        Run the proxy spider to crawl new proxy ip
+        """
+        proxy_ip_list = self.__proxy_spider.get_proxy_ip(
+            self.__proxy_spider_page)
+        add_proxy_ip_list = []
+        for proxy_ip in proxy_ip_list:
+            if proxy_ip.is_https == False:
+                add_proxy_ip_list.append(proxy_ip)
+        self.add_proxy_list(add_proxy_ip_list)
+
+
+controller = ProxyController()
+# proxy = ProxyIP('182.138.249.117', '8118', False, False)
+# print controller.add_proxy(proxy)
+controller.get_proxy()

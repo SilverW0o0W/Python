@@ -19,7 +19,7 @@ class ProxySpider(object):
         """
         Get proxy ip
         """
-        proxy = []
+        proxy_ip_list = []
         for i in range(1, page_count):
             try:
                 url = 'http://www.xicidaili.com/nn/' + str(i)
@@ -34,10 +34,10 @@ class ProxySpider(object):
                     ip_temp = ProxyIP(tds[1].contents[0],
                                       tds[2].contents[0], is_https)
                     print ip_temp.ip + '\t' + ip_temp.port + '\t' + str(ip_temp.is_https)
-                    proxy.append(ip_temp)
+                    proxy_ip_list.append(ip_temp)
             except Exception, ex:
                 continue
-        return proxy
+        return proxy_ip_list
 
 
 class ProxyIP(object):
@@ -57,6 +57,5 @@ class ProxyIP(object):
         """
         return self.ip + ':' + self.port
 
-
-proxy_spider = ProxySpider()
-proxy_spider.get_proxy_ip(2)
+# proxy_spider = ProxySpider()
+# proxy_spider.get_proxy_ip(2)
