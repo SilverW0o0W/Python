@@ -4,7 +4,8 @@ This is the main
 """
 
 import json
-import requests
+import urllib
+import urllib2
 from encrypto import generate_data
 from music import SongComment
 
@@ -78,7 +79,10 @@ class CommentSpider(object):
         """
         Send comment request.
         """
-        return requests.post(url, headers=headers, data=data)
+        data = urllib.urlencode(data)
+        request = urllib2.Request(url, data, headers)
+        return urllib2.urlopen(request)
+        # return requests.post(url, headers=headers, data=data)
 
     def get_response_comment(self):
         """
@@ -90,3 +94,7 @@ class CommentSpider(object):
         self.__comment.set_comment_total(content['total'])
         self.__comment.set_comment_list(content['comments'])
         return self.__comment
+
+
+spider = CommentSpider('26584163')
+print spider.get_response_comment()
