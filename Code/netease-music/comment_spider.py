@@ -81,20 +81,19 @@ class CommentSpider(object):
         """
         data = urllib.urlencode(data)
         request = urllib2.Request(url, data, headers)
-        return urllib2.urlopen(request)
-        # return requests.post(url, headers=headers, data=data)
+        return urllib2.urlopen(request).read()
 
     def get_response_comment(self):
         """
         Send request and analysis response
         """
         response = self.send_request(self.get_request_url(self.__comment.get_song_id()),
-                                     self.get_request_headers(), self.get_request_data(False))
-        content = json.loads(response.content)
+                                     self.get_request_headers(), self.get_request_data(True))
+        content = json.loads(response)
         self.__comment.set_comment_total(content['total'])
         self.__comment.set_comment_list(content['comments'])
         return self.__comment
 
 
-spider = CommentSpider('26584163')
-print spider.get_response_comment()
+# spider = CommentSpider('26584163')
+# print spider.get_response_comment().get_comment_total()
