@@ -78,20 +78,24 @@ class CommentSpider(object):
         """
         return str.format(self.__url_base, song_id)
 
-    def send_request(self, url, headers, data):
+    def send_request(self, url, headers, data, use_proxy=False):
         """
         Send comment request.
         """
         data = urllib.urlencode(data)
         request = urllib2.Request(url, data, headers)
         try:
-            proxy_data = {'http': '111.155.116.233:8123'}
-            proxy_handler = urllib2.ProxyHandler(proxy_data)
-            opener = urllib2.build_opener(proxy_handler)
-            return opener.open(request)
-        except Exception,e:
-            print e.message
-        # return urllib2.urlopen(request).read()
+            if use_proxy:
+                proxy_data = {'http': '111.155.116.233:8123'}
+                proxy_handler = urllib2.ProxyHandler(proxy_data)
+                opener = urllib2.build_opener(proxy_handler)
+                response = opener.open(request).read()
+            else:
+                response = urllib2.urlopen(request).read()
+        except urllib2.URLError, error:
+            response = ''
+            print error.message
+        return response
 
     def get_response_comment(self):
         """
