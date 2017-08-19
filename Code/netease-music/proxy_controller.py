@@ -130,7 +130,7 @@ class ProxyController(object):
         """
         Get proxy list from splite and check available
         """
-        ip_value_list = self.select_proxy_db()
+        ip_value_list = self.select_proxy_db(count)
         ip_list = []
         for ip_value in ip_value_list:
             ip_temp = ProxyIP(ip_value[1], ip_value[2],
@@ -320,9 +320,11 @@ class ProxyController(object):
         self.add_proxy_list(add_proxy_ip_list)
 
 
-controller = ProxyController()
+# controller = ProxyController()
 # proxy = ProxyIP('182.138.249.117', '8118', False, False)
 # print controller.add_proxy(proxy)
-ip_list = controller.get_proxy()
-for ip in ip_list:
-    print ip.ip + '\t' + ip.port
+
+
+# ip_list = controller.get_proxy()
+# for ip in ip_list:
+#     print ip.ip + '\t' + ip.port

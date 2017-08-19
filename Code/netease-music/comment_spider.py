@@ -8,6 +8,7 @@ import urllib
 import urllib2
 from encrypto import generate_data
 from music import SongComment
+from proxy_controller import ProxyController
 
 
 class CommentSpider(object):
@@ -24,6 +25,8 @@ class CommentSpider(object):
         'Cookie': 'appver=1.5.0.75771;',
         'Referer': 'http://music.163.com/'
     }
+
+    __proxy_controller = ProxyController()
 
     __DATA_MAX_LOOP = 10
     __DATA_MAX_CACHE = 10
@@ -81,7 +84,14 @@ class CommentSpider(object):
         """
         data = urllib.urlencode(data)
         request = urllib2.Request(url, data, headers)
-        return urllib2.urlopen(request).read()
+        try:
+            proxy_data = {'http': '111.155.116.233:8123'}
+            proxy_handler = urllib2.ProxyHandler(proxy_data)
+            opener = urllib2.build_opener(proxy_handler)
+            return opener.open(request)
+        except Exception,e:
+            print e.message
+        # return urllib2.urlopen(request).read()
 
     def get_response_comment(self):
         """
@@ -95,5 +105,5 @@ class CommentSpider(object):
         return self.__comment
 
 
-# spider = CommentSpider('26584163')
-# print spider.get_response_comment().get_comment_total()
+spider = CommentSpider('26584163')
+print spider.get_response_comment().get_comment_total()
