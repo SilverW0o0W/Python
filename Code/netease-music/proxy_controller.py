@@ -24,6 +24,10 @@ class ProxyController(object):
     __thread_list_split = 5
     __thread_result = threading.local()
 
+    __crawl_thread_running = False
+    __crawl_check_seconds = 30
+    __crawl_loop_stop = False
+
     __proxy_spider = ProxySpider()
     __proxy_spider_page = 2
 
@@ -36,9 +40,13 @@ class ProxyController(object):
     __sql_insert_ip = 'insert into proxy_ip values(null, ?, ?, ?, ?)'
     __sql_select_ip_exist = 'select * from proxy_ip where ip = ? and port = ?'
     __sql_select_ip_all = 'select * from proxy_ip'
+    __sql_select_ip_count = 'select count(*) from proxy_ip'
 
     def __init__(self):
         self.init_db()
+        check_thread = threading.Thread(target=self.check_db_storage_thread)
+        check_thread.setName('storage_checker')
+        check_thread.start()
 
     def send_check_request(self, proxy_data, check_url):
         """
@@ -47,7 +55,7 @@ class ProxyController(object):
         for i in range(3):
             check_thread = threading.Thread(
                 target=self.send_check_request_thread, args=(proxy_data, check_url,))
-            print 'retry' + str(i)
+            # print 'retry' + str(i)
             check_thread.start()
             check_thread.join(self.__thread_timeout)
             if check_thread.is_alive():
@@ -67,10 +75,10 @@ class ProxyController(object):
             self.__thread_result = response.code == 200
         except urllib2.HTTPError, error:
             self.__thread_result = False
-            print error
+            # print error
         except urllib2.URLError, error:
             self.__thread_result = False
-            print error.message
+            # print error.message
 
     def check_proxy(self, proxy_ip):
         """
@@ -168,7 +176,7 @@ class ProxyController(object):
         params_list = (count)
         # result_set = self.sql_read(self.__sql_select_ip_all, params_list)
         result_set = self.sql_read(self.__sql_select_ip_all)
-        if result_set is None or len(result_set) < self.__db_min_storage:
+        if (result_set is None or len(result_set) < self.__db_min_storage) and not self.__crawl_thread_running:
             crawl_thread = threading.Thread(target=self.crawl_proxy_ip)
             print 'Crawl proxy start'
             crawl_thread.start()
@@ -177,6 +185,38 @@ class ProxyController(object):
             proxy_ip = result
             proxy_ip_list.append(proxy_ip)
         return proxy_ip_list
+
+    def get_db_count(self, is_main_thread=True):
+        """
+        Get total record in db.
+        """
+        result_set = self.sql_read(
+            self.__sql_select_ip_count, None, is_main_thread)
+        if result_set is not None and len(result_set) > 0 and len(result_set[0]) > 0:
+            return result_set[0][0]
+        else:
+            return -1
+
+    def check_db_storage_thread(self):
+        """
+        Check db storage status
+        """
+        time.sleep(10)
+        crawl_thread = None
+        while True:
+            if self.__crawl_loop_stop:
+                if crawl_thread is not None:
+                    crawl_thread.join()
+                break
+            if not self.__crawl_thread_running:
+                count = self.get_db_count(False)
+                if count < self.__db_min_storage:
+                    if not self.__crawl_thread_running:
+                        crawl_thread = threading.Thread(
+                            target=self.crawl_proxy_ip)
+                        print 'Crawl proxy start'
+                        crawl_thread.start()
+            time.sleep(self.__crawl_check_seconds)
 
     def check_proxy_exist(self, proxy_ip):
         """
@@ -311,20 +351,25 @@ class ProxyController(object):
         """
         Run the proxy spider to crawl new proxy ip
         """
-        proxy_ip_list = self.__proxy_spider.get_proxy_ip(
-            self.__proxy_spider_page)
-        add_proxy_ip_list = []
-        for proxy_ip in proxy_ip_list:
-            if proxy_ip.is_https == False:
-                add_proxy_ip_list.append(proxy_ip)
-        self.add_proxy_list(add_proxy_ip_list)
+        self.__crawl_thread_running = True
+        try:
+            proxy_ip_list = self.__proxy_spider.get_proxy_ip(
+                self.__proxy_spider_page)
+            add_proxy_ip_list = []
+            for proxy_ip in proxy_ip_list:
+                if not proxy_ip.is_https:
+                    add_proxy_ip_list.append(proxy_ip)
+            self.add_proxy_list(add_proxy_ip_list)
+        finally:
+            self.__crawl_thread_running = False
 
 
-# controller = ProxyController()
+controller = ProxyController()
 # proxy = ProxyIP('182.138.249.117', '8118', False, False)
 # print controller.add_proxy(proxy)
-
-
+print controller.get_db_count()
+while True:
+    time.sleep(5)
 # ip_list = controller.get_proxy()
 # for ip in ip_list:
 #     print ip.ip + '\t' + ip.port
