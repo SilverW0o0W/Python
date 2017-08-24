@@ -35,8 +35,8 @@ class ProxyController(object):
     __proxy_spider_page = 2
 
     __sql_insert_ip = "insert into proxy_ip values(null, ?, ?, ?, ?, datetime('now', 'localtime'))"
-    __sql_delete_ip = 'delete from proxy_ip where ip = ? and port = ?'
-    __sql_update_ip = 'update proxy_ip set ip = ?， port = ?， https = ?, available = ?, verify_time = ? where ip = ? and port = ?'
+    __sql_delete_ip = 'delete from proxy_ip where id = ?'
+    __sql_update_ip = 'update proxy_ip set ip = ?， port = ?， https = ?, available = ?, verify_time = ? where id = ?'
     __sql_select_ip_exist = 'select * from proxy_ip where ip = ? and port = ?'
     __sql_select_ip_all = 'select * from proxy_ip'
     __sql_select_ip_count = 'select count(*) from proxy_ip'
@@ -169,7 +169,7 @@ class ProxyController(object):
         Delete proxy ip info from sqlite db file.
         """
         sql = self.__sql_delete_ip
-        params_list = (proxy_ip.ip, proxy_ip.port,)
+        params_list = (proxy_ip.id)
         return self.__db_controller.sql_write(sql, params_list, is_main_thread)
 
     def update_proxy_db(self, proxy_ip, is_main_thread=True):
@@ -178,7 +178,7 @@ class ProxyController(object):
         """
         sql = self.__sql_update_ip
         params_list = (proxy_ip.ip, proxy_ip.port, 1 if proxy_ip.is_https else 0,
-                       1 if proxy_ip.available else 0, proxy_ip.verify_time, proxy_ip.ip, proxy_ip.port)
+                       1 if proxy_ip.available else 0, proxy_ip.verify_time, proxy_ip.id)
         return self.__db_controller.sql_write(sql, params_list, is_main_thread)
 
     def convert_db_proxy_to_proxy_ip(self, ip_value_list):
@@ -188,7 +188,7 @@ class ProxyController(object):
         ip_list = []
         for ip_value in ip_value_list:
             ip_temp = ProxyIP(ip_value[1], ip_value[2],
-                              ip_value[3] == 1, ip_value[4] == 1)
+                              ip_value[3] == 1, ip_value[4] == 1, ip_value[5], ip_value[0])
             ip_list.append(ip_temp)
         return ip_list
 
