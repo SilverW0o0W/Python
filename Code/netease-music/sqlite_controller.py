@@ -13,7 +13,7 @@ class SqliteController(object):
     This is a class for controlling sqlite
     """
 
-    __sql_create_table = 'create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT)'
+    __sql_create_table = "create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT,verify_time TIMESTAMP default (datetime('now', 'localtime'))"
 
     __db_path = 'proxy_ip.db'
     __db_connection = None

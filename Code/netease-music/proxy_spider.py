@@ -5,6 +5,7 @@ This is for crawling proxy ip from ip website.
 
 import urllib2
 from bs4 import BeautifulSoup
+from proxy_ip import ProxyIP
 
 
 class ProxySpider(object):
@@ -38,24 +39,6 @@ class ProxySpider(object):
             except Exception, ex:
                 continue
         return proxy_ip_list
-
-
-class ProxyIP(object):
-    """
-    This is the class for ip information.
-    """
-
-    def __init__(self, ip, port, is_https, available=False):
-        self.ip = ip
-        self.port = port
-        self.is_https = is_https
-        self.available = available
-
-    def get_ip_port(self):
-        """
-        Get ip:port string.
-        """
-        return self.ip + ':' + self.port
 
 # proxy_spider = ProxySpider()
 # proxy_spider.get_proxy_ip(2)
