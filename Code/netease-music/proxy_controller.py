@@ -305,13 +305,25 @@ class ProxyController(object):
         self.__verify_thread_running = True
         ip_value_list = self.select_need_check_proxy_list(False)
         proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
-        for proxy_ip in proxy_ip_list:
-            check_thread = threading.Thread(
-                target=self.verify_proxy_thread, args=(proxy_ip))
-            check_thread.start()
+        verify_thread = threading.Thread(
+            target=self.verify_proxy_ip_list_thread, args=(proxy_ip_list))
+        verify_thread.start()
+        verify_thread.join()
         self.__verify_thread_running = False
 
-    def verify_proxy_thread(self, proxy_ip):
+    def verify_proxy_ip_list_thread(self, proxy_ip_list):
+        """
+        Check proxy ip list.
+        """
+        check_thread_list = []
+        for proxy_ip in proxy_ip_list:
+            check_thread = threading.Thread(
+                target=self.verify_proxy_ip_thread, args=(proxy_ip))
+            check_thread.start()
+        for check_thread in check_thread_list:
+            check_thread.join()
+
+    def verify_proxy_ip_thread(self, proxy_ip):
         """
         Check single proxy ip and delete inavaildable ip.
         """
