@@ -28,24 +28,29 @@ class ProxyController(object):
     __verify_thread_running = False
     __db_check_seconds = 300
 
-    __db_controller = SqliteController()
-    __db_min_storage = 10
-
     __proxy_spider = ProxySpider()
     __proxy_spider_page = 2
 
-    __sql_insert_ip = "insert into proxy_ip values(null, ?, ?, ?, ?, datetime('now', 'localtime'))"
+    __sql_create_table = "create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT,verify_time TIMESTAMP default (datetime('now', 'localtime')), create_time TIMESTAMP default (datetime('now', 'localtime')))"
+    __sql_insert_ip = "insert into proxy_ip values(null, ?, ?, ?, ?, datetime('now', 'localtime'), datetime('now', 'localtime'))"
     __sql_delete_ip = 'delete from proxy_ip where id = ?'
-    __sql_update_ip = 'update proxy_ip set ip = ?， port = ?， https = ?, available = ?, verify_time = ? where id = ?'
+    __sql_update_ip = 'update proxy_ip set ip = ?, port = ?, https = ?, available = ?, verify_time = ? where id = ?'
     __sql_select_ip_exist = 'select * from proxy_ip where ip = ? and port = ?'
     __sql_select_ip_all = 'select * from proxy_ip'
     __sql_select_ip_count = 'select count(*) from proxy_ip'
 
+    __db_path = 'proxy_ip.db'
+    __db_controller = SqliteController(__sql_create_table, __db_path)
+    __db_min_storage = 10
+
     def __init__(self):
         self.__db_controller.init_db()
         check_thread = threading.Thread(target=self.check_db_storage_thread)
-        check_thread.setName('storage_checker')
+        check_thread.setName('storage_count_checker')
         check_thread.start()
+        verify_thread = threading.Thread(target=self.verify_db_storage_thread)
+        verify_thread.setName('storage_available_checker')
+        verify_thread.start()
 
     def send_check_request(self, proxy_data, check_url):
         """
@@ -169,7 +174,8 @@ class ProxyController(object):
         Delete proxy ip info from sqlite db file.
         """
         sql = self.__sql_delete_ip
-        params_list = (proxy_ip.id)
+        params_list = []
+        params_list.append(proxy_ip.id)
         return self.__db_controller.sql_write(sql, params_list, is_main_thread)
 
     def update_proxy_db(self, proxy_ip, is_main_thread=True):
@@ -188,7 +194,7 @@ class ProxyController(object):
         ip_list = []
         for ip_value in ip_value_list:
             ip_temp = ProxyIP(ip_value[1], ip_value[2],
-                              ip_value[3] == 1, ip_value[4] == 1, ip_value[5], ip_value[0])
+                              ip_value[3] == 1, ip_value[4] == 1, ip_value[5], ip_value[6], ip_value[0])
             ip_list.append(ip_temp)
         return ip_list
 
@@ -274,7 +280,7 @@ class ProxyController(object):
         Select proxy ip in sqlite
         """
         result_set = self.__db_controller.sql_read(
-            self.__sql_select_ip_all, is_main_thread)
+            self.__sql_select_ip_all, None, is_main_thread)
         if result_set is None:
             result_set = []
         proxy_ip_list = []
@@ -288,7 +294,7 @@ class ProxyController(object):
         Check proxy in db is still available
         """
         verify_thread = None
-        time.sleep(180)
+        time.sleep(5)
         while True:
             if self.__watcher_thread_stop:
                 if verify_thread is not None:
@@ -306,7 +312,7 @@ class ProxyController(object):
         ip_value_list = self.select_need_check_proxy_list(False)
         proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
         verify_thread = threading.Thread(
-            target=self.verify_proxy_ip_list_thread, args=(proxy_ip_list))
+            target=self.verify_proxy_ip_list_thread, args=(proxy_ip_list,))
         verify_thread.start()
         verify_thread.join()
         self.__verify_thread_running = False
@@ -318,8 +324,9 @@ class ProxyController(object):
         check_thread_list = []
         for proxy_ip in proxy_ip_list:
             check_thread = threading.Thread(
-                target=self.verify_proxy_ip_thread, args=(proxy_ip))
+                target=self.verify_proxy_ip_thread, args=(proxy_ip,))
             check_thread.start()
+            check_thread_list.append(check_thread)
         for check_thread in check_thread_list:
             check_thread.join()
 
@@ -328,6 +335,7 @@ class ProxyController(object):
         Check single proxy ip and delete inavaildable ip.
         """
         available = self.check_proxy(proxy_ip)
+        print 'verify' + proxy_ip.ip
         if available:
             proxy_ip.verify_time = time.strftime(
                 '%Y-%m-%d %H:%M:%S', time.localtime(time.time()))

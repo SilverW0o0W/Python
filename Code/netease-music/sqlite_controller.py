@@ -8,22 +8,24 @@ import threading
 import os
 import sqlite3
 
+
 class SqliteController(object):
     """
     This is a class for controlling sqlite
     """
-
-    __sql_create_table = "create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT,verify_time TIMESTAMP default (datetime('now', 'localtime'))"
-
-    __db_path = 'proxy_ip.db'
     __db_connection = None
     __db_min_storage = 10
     __db_thread_connection = threading.local()
 
-    def __init__(self):
-        self.init_db()
+    __sql_create_table = None
+    __db_path = None
 
-    def init_db(self, is_main_thread=True):
+    def __init__(self, sql_create_table, db_path):
+        self.__sql_create_table = sql_create_table
+        self.__db_path = db_path
+        self.init_db(sql_create_table)
+
+    def init_db(self, sql_create_table=__sql_create_table, is_main_thread=True):
         """
         Initialize sqlite db.
         """
@@ -31,7 +33,7 @@ class SqliteController(object):
             db_exist = self.establish_db_connection(is_main_thread)
             if not db_exist:
                 # Create db table
-                return self.sql_write(self.__sql_create_table)
+                return self.sql_write(sql_create_table)
             return True
         except sqlite3.DatabaseError:
             return False
