@@ -4,6 +4,7 @@ This is for controlling proxy ip
 """
 
 import time
+from datetime import datetime, timedelta
 import threading
 import urllib2
 
@@ -18,15 +19,17 @@ class ProxyController(object):
     """
     __check_http_url = 'http://silvercodingcat.com/python/2017/08/09/Proxy-Spider-Check/'
     __check_https_url = ''
+    __check_retry_time = 3
     __thread_timeout = 15
     __thread_list_split = 5
     __thread_result = threading.local()
 
     __watcher_thread_stop = False
     __crawl_thread_running = False
-    __crawl_check_seconds = 30
     __verify_thread_running = False
+    __crawl_check_seconds = 30
     __db_check_seconds = 300
+    __proxy_check_minutes = 5
 
     __proxy_spider = ProxySpider()
     __proxy_spider_page = 2
@@ -37,6 +40,7 @@ class ProxyController(object):
     __sql_update_ip = 'update proxy_ip set ip = ?, port = ?, https = ?, available = ?, verify_time = ? where id = ?'
     __sql_select_ip_exist = 'select * from proxy_ip where ip = ? and port = ?'
     __sql_select_ip_all = 'select * from proxy_ip'
+    __sql_select_ip_verify = 'select * from proxy_ip where verify_time < datetime(?)'
     __sql_select_ip_count = 'select count(*) from proxy_ip'
 
     __db_path = 'proxy_ip.db'
@@ -56,7 +60,7 @@ class ProxyController(object):
         """
         Send check request. Timeout: 15s. Retry: 3 times.
         """
-        for i in range(3):
+        for i in range(self.__check_retry_time):
             check_thread = threading.Thread(
                 target=self.send_check_request_thread, args=(proxy_data, check_url,))
             # print 'retry' + str(i)
@@ -119,13 +123,16 @@ class ProxyController(object):
             last = (i + 1) * split_num if i < times else len(proxy_ip_list)
             proxy_ip_split_list.append(proxy_ip_list[pre:last])
         i = 0
+        add_thread_list = []
         for list_thread in proxy_ip_split_list:
             add_thread = threading.Thread(
                 target=self.add_proxy_list_thread, args=(list_thread,))
             add_thread.setName('add-proxy-' + str(i))
+            add_thread_list.append(add_thread)
+            i += 1
+        for add_thread in add_thread_list:
             add_thread.start()
             add_thread.join()
-            i += 1
         print 'add proxy done'
 
     def add_proxy_list_thread(self, proxy_ip_list):
@@ -162,8 +169,8 @@ class ProxyController(object):
         Insert proxy ip info to sqlite db file.
         """
         ip_params_list = []
+        sql = self.__sql_insert_ip
         for proxy_ip in proxy_ip_list:
-            sql = self.__sql_insert_ip
             ip_params = (proxy_ip.ip, proxy_ip.port,
                          1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
             ip_params_list.append(ip_params)
@@ -279,8 +286,13 @@ class ProxyController(object):
         """
         Select proxy ip in sqlite
         """
+        delta = timedelta(minutes=self.__proxy_check_minutes)
+        verify_time = datetime.now() - delta
+        str_verify_time = verify_time.strftime('%Y-%m-%d %H:%M:%S')
+        params_list = []
+        params_list.append(str_verify_time)
         result_set = self.__db_controller.sql_read(
-            self.__sql_select_ip_all, None, is_main_thread)
+            self.__sql_select_ip_verify, params_list, is_main_thread)
         if result_set is None:
             result_set = []
         proxy_ip_list = []

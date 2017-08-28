@@ -2,7 +2,7 @@
 This is the file for proxy ip class
 """
 
-import time
+from datetime import datetime
 
 
 class ProxyIP(object):
@@ -16,10 +16,10 @@ class ProxyIP(object):
         self.port = port
         self.is_https = is_https
         self.available = available
-        self.verify_time = verify_time if verify_time is not None else time.strftime(
-            '%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-        self.create_time = create_time if create_time is not None else time.strftime(
-            '%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+        self.verify_time = verify_time if verify_time is not None else datetime.now(
+        ).strftime('%Y-%m-%d %H:%M:%S')
+        self.create_time = create_time if create_time is not None else datetime.now(
+        ).strftime('%Y-%m-%d %H:%M:%S')
 
     def get_ip_port(self):
         """
