@@ -41,11 +41,13 @@ class ProxyController(object):
     __sql_select_ip_exist = 'select * from proxy_ip where ip = ? and port = ?'
     __sql_select_ip_all = 'select * from proxy_ip'
     __sql_select_ip_verify = 'select * from proxy_ip where verify_time < datetime(?)'
+    __sql_select_ip_available = 'select * from proxy_ip where verify_time > datetime(?)'
     __sql_select_ip_count = 'select count(*) from proxy_ip'
 
     __db_path = 'proxy_ip.db'
     __db_controller = SqliteController(__sql_create_table, __db_path)
-    __db_min_storage = 10
+    __db_min_storage = 20
+    __db_min_available = 10
 
     def __init__(self):
         self.__db_controller.init_db()
@@ -209,11 +211,14 @@ class ProxyController(object):
         """
         Select proxy ip in sqlite
         """
-        params_list = (count)
         # result_set = self.__sqlite_controller.sql_read(self.__sql_select_ip_all, params_list)
+        delta = timedelta(minutes=self.__proxy_check_minutes)
+        available_time = datetime.now() - delta
+        str_available_time = available_time.strftime('%Y-%m-%d %H:%M:%S')
+        params_list = (str_available_time)
         result_set = self.__db_controller.sql_read(
-            self.__sql_select_ip_all, is_main_thread)
-        if (result_set is None or len(result_set) < self.__db_min_storage) and not self.__crawl_thread_running:
+            self.__sql_select_ip_available, params_list, is_main_thread)
+        if (result_set is None or len(result_set) < self.__db_min_available) and not self.__crawl_thread_running:
             crawl_thread = threading.Thread(target=self.crawl_proxy_ip)
             crawl_thread.setName('proxy-spider')
             print 'Crawl proxy start'
@@ -354,6 +359,13 @@ class ProxyController(object):
             self.update_proxy_db(proxy_ip, False)
         else:
             self.delete_proxy_db(proxy_ip, False)
+
+    def dispose(self):
+        """
+        Release resource.
+        """
+        self.__watcher_thread_stop = True
+        self.__db_controller.dispose_db_connection()
 
 
 controller = ProxyController()
