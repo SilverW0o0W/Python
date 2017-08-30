@@ -86,7 +86,7 @@ class ProxyController(object):
         except urllib2.HTTPError, error:
             self.__thread_result = False
             # print error
-        except urllib2.URLError, error:
+        except Exception, error:
             self.__thread_result = False
             # print error.message
 
@@ -215,7 +215,7 @@ class ProxyController(object):
         delta = timedelta(minutes=self.__proxy_check_minutes)
         available_time = datetime.now() - delta
         str_available_time = available_time.strftime('%Y-%m-%d %H:%M:%S')
-        params_list = (str_available_time)
+        params_list = (str_available_time,)
         result_set = self.__db_controller.sql_read(
             self.__sql_select_ip_available, params_list, is_main_thread)
         if (result_set is None or len(result_set) < self.__db_min_available) and not self.__crawl_thread_running:
@@ -371,7 +371,8 @@ class ProxyController(object):
 controller = ProxyController()
 # proxy = ProxyIP('182.138.249.117', '8118', False, False)
 # print controller.add_proxy(proxy)
-print controller.get_db_count()
+# print controller.get_db_count()
+ip_list = controller.get_proxy()
 while True:
     time.sleep(5)
 # ip_list = controller.get_proxy()
