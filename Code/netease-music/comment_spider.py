@@ -16,8 +16,11 @@ class CommentSpider(object):
     Spider part
     """
 
-    def __init__(self, song_id='00000000'):
+    def __init__(self, song_id='00000000', use_proxy=False):
         self.__comment = SongComment(song_id)
+        self.__use_proxy = use_proxy
+        if use_proxy:
+            self.__proxy_controller = ProxyController()
 
     __url_base = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{0}/?csrf_token="
 
@@ -26,7 +29,7 @@ class CommentSpider(object):
         'Referer': 'http://music.163.com/'
     }
 
-    __proxy_controller = ProxyController()
+    __proxy_controller = None
 
     __DATA_MAX_LOOP = 10
     __DATA_MAX_CACHE = 10
@@ -86,7 +89,9 @@ class CommentSpider(object):
         request = urllib2.Request(url, data, headers)
         try:
             if use_proxy:
-                proxy_data = {'http': '111.155.116.233:8123'}
+                proxy_ip_list = self.__proxy_controller.get_proxy()
+                proxy_ip = proxy_ip_list[0]
+                proxy_data = {'http': proxy_ip.ip + ':' + proxy_ip.port}
                 proxy_handler = urllib2.ProxyHandler(proxy_data)
                 opener = urllib2.build_opener(proxy_handler)
                 response = opener.open(request).read()
