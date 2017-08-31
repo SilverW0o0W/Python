@@ -21,7 +21,7 @@ class ProxyController(object):
     __check_https_url = ''
     __check_retry_time = 3
     __thread_timeout = 15
-    __thread_list_split = 5
+    __thread_list_split = 3
     __thread_result = threading.local()
 
     __watcher_thread_stop = False
@@ -132,8 +132,8 @@ class ProxyController(object):
             add_thread.setName('add-proxy-' + str(i))
             add_thread_list.append(add_thread)
             i += 1
-        for add_thread in add_thread_list:
             add_thread.start()
+        for add_thread in add_thread_list:
             add_thread.join()
         print 'add proxy done'
 
@@ -352,7 +352,7 @@ class ProxyController(object):
         Check single proxy ip and delete inavaildable ip.
         """
         available = self.check_proxy(proxy_ip)
-        print 'verify' + proxy_ip.ip
+        # print 'verify' + proxy_ip.ip
         if available:
             proxy_ip.verify_time = time.strftime(
                 '%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
