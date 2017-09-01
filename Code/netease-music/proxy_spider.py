@@ -10,7 +10,7 @@ from proxy_ip import ProxyIP
 
 class ProxySpider(object):
     """
-    This is the class for crawling proxy id
+    This is the class for crawling ip from proxy site
     """
     __user_agent = 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0'
     __header = {}

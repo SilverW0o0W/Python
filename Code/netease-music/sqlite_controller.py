@@ -15,7 +15,6 @@ class SqliteController(object):
     """
     __db_connection = None
     __db_min_storage = 10
-    __db_thread_connection = threading.local()
 
     __sql_create_table = None
     __db_path = None
@@ -25,12 +24,13 @@ class SqliteController(object):
         self.__db_path = db_path
         self.init_db(sql_create_table)
 
-    def init_db(self, sql_create_table=__sql_create_table, is_main_thread=True):
+    def init_db(self, sql_create_table=__sql_create_table):
         """
         Initialize sqlite db.
         """
         try:
-            db_exist = self.establish_db_connection(is_main_thread)
+            db_exist = os.path.exists(self.__db_path)
+            self.__db_connection = self.establish_db_connection()
             if not db_exist:
                 # Create db table
                 return self.sql_write(sql_create_table)
@@ -38,17 +38,12 @@ class SqliteController(object):
         except sqlite3.DatabaseError:
             return False
 
-    def establish_db_connection(self, is_main_thread=True):
+    def establish_db_connection(self, check_thread=True):
         """
-        Establish sqlite connection. If it don't exist, create the db file.
-        Return: The file is existed before exstablish connection.
+        Establish sqlite connection.
+        Return: connection
         """
-        is_exist = os.path.exists(self.__db_path)
-        if is_main_thread:
-            self.__db_connection = sqlite3.connect(self.__db_path)
-        else:
-            self.__db_thread_connection = sqlite3.connect(self.__db_path)
-        return is_exist
+        return sqlite3.connect(self.__db_path, check_same_thread=check_thread)
 
     def dispose_db_connection(self):
         """
@@ -68,8 +63,7 @@ class SqliteController(object):
             if is_main_thread:
                 connect = self.__db_connection
             else:
-                self.establish_db_connection(False)
-                connect = self.__db_thread_connection
+                connect = self.establish_db_connection(False)
             cursor = connect.cursor()
             if params_list is None:
                 result = cursor.execute(sql)
@@ -97,8 +91,7 @@ class SqliteController(object):
             if is_main_thread:
                 connect = self.__db_connection
             else:
-                self.establish_db_connection(False)
-                connect = self.__db_thread_connection
+                connect = self.establish_db_connection()
             cursor = connect.cursor()
             for params in params_list:
                 try:
@@ -127,8 +120,7 @@ class SqliteController(object):
             if is_main_thread:
                 connect = self.__db_connection
             else:
-                self.establish_db_connection(False)
-                connect = self.__db_thread_connection
+                connect = self.establish_db_connection()
             cursor = connect.cursor()
             if params_list is None:
                 cursor.execute(sql)

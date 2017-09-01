@@ -9,7 +9,6 @@ import urllib2
 import threading
 import threadpool
 
-
 from sqlite_controller import SqliteController
 from proxy_ip import ProxyIP
 from proxy_spider import ProxySpider
@@ -88,9 +87,6 @@ class ProxyController(object):
         try:
             response = opener.open(url)
             self.__thread_result = response.code == 200
-        except urllib2.HTTPError, error:
-            self.__thread_result = False
-            # print error
         except Exception, error:
             self.__thread_result = False
             # print error.message
@@ -330,6 +326,7 @@ class ProxyController(object):
         Check single proxy ip and delete inavaildable ip.
         """
         self.__verify_thread_running = True
+        print 'verify proxy start'
         try:
             ip_value_list = self.select_need_check_proxy_list(False)
             proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
@@ -338,6 +335,7 @@ class ProxyController(object):
             print ex.message
         finally:
             self.__verify_thread_running = False
+            print 'verify proxy done'
 
     def verify_proxy_ip_list(self, proxy_ip_list):
         """
@@ -353,9 +351,7 @@ class ProxyController(object):
         """
         Check single proxy ip and delete inavaildable ip.
         """
-        print 'verify\t' + proxy_ip.ip
         available = self.check_proxy(proxy_ip)
-        # print 'verify' + proxy_ip.ip
         if available:
             proxy_ip.verify_time = time.strftime(
                 '%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
