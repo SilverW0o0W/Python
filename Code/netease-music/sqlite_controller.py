@@ -3,8 +3,6 @@
 This is for controlling sqlite
 """
 
-import threading
-
 import os
 import sqlite3
 
