@@ -8,7 +8,7 @@ import urllib
 import urllib2
 from encrypto import generate_data
 from music import SongComment
-from proxy_controller import ProxyController
+from proxy_ip import ProxyIP
 
 
 class CommentSpider(object):
@@ -16,11 +16,8 @@ class CommentSpider(object):
     Spider part
     """
 
-    def __init__(self, song_id='00000000', use_proxy=False):
-        self.__comment = SongComment(song_id)
-        self.__use_proxy = use_proxy
-        if use_proxy:
-            self.__proxy_controller = ProxyController()
+    def __init__(self):
+        pass
 
     __url_base = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{0}/?csrf_token="
 
@@ -29,19 +26,11 @@ class CommentSpider(object):
         'Referer': 'http://music.163.com/'
     }
 
-    __proxy_controller = None
-
     __DATA_MAX_LOOP = 10
     __DATA_MAX_CACHE = 10
     __data_loop = __DATA_MAX_LOOP
     __data_current = 0
     __data_list = []
-
-    def reset_song_id(self, song_id):
-        """
-        Reset comment instance
-        """
-        self.__comment = SongComment(song_id)
 
     def get_request_headers(self):
         """
@@ -69,28 +58,20 @@ class CommentSpider(object):
             self.__data_current += 1
             return data
 
-    def get_song_comment(self):
-        """
-        Get comment instance
-        """
-        return self.__comment
-
     def get_request_url(self, song_id):
         """
         Get concat request url
         """
         return str.format(self.__url_base, song_id)
 
-    def send_request(self, url, headers, data, use_proxy=False):
+    def send_request(self, url, headers, data, proxy_ip=None):
         """
         Send comment request.
         """
         data = urllib.urlencode(data)
         request = urllib2.Request(url, data, headers)
         try:
-            if use_proxy:
-                proxy_ip_list = self.__proxy_controller.get_proxy()
-                proxy_ip = proxy_ip_list[0]
+            if proxy_ip is not None:
                 proxy_data = {'http': proxy_ip.ip + ':' + proxy_ip.port}
                 proxy_handler = urllib2.ProxyHandler(proxy_data)
                 opener = urllib2.build_opener(proxy_handler)
@@ -98,21 +79,24 @@ class CommentSpider(object):
             else:
                 response = urllib2.urlopen(request).read()
         except urllib2.URLError, error:
-            response = ''
+            response = None
             print error.message
         return response
 
-    def get_response_comment(self):
+    def get_response_comment(self, song_id, proxy_ip=None):
         """
         Send request and analysis response
         """
-        response = self.send_request(self.get_request_url(self.__comment.get_song_id()),
-                                     self.get_request_headers(), self.get_request_data(True))
+        comment = SongComment(song_id)
+        response = self.send_request(self.get_request_url(comment.get_song_id(
+        )), self.get_request_headers(), self.get_request_data(True), proxy_ip)
+        if response is None:
+            return None
         content = json.loads(response)
-        self.__comment.set_comment_total(content['total'])
-        self.__comment.set_comment_list(content['comments'])
-        return self.__comment
+        comment.set_comment_total(content['total'])
+        comment.set_comment_list(content['comments'])
+        return comment
 
 
-spider = CommentSpider('26584163')
-print spider.get_response_comment().get_comment_total()
+spider = CommentSpider()
+print spider.get_response_comment('26584163').get_comment_total()
