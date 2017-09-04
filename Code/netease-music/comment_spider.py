@@ -1,6 +1,7 @@
 # coding=utf-8
 """
-This is the main
+Aim:
+Initialize a CommentSpider instance, add call function with a song id. Return SongComment
 """
 
 import json
@@ -8,7 +9,8 @@ import urllib
 import urllib2
 from encrypto import generate_data
 from music import SongComment
-from proxy_ip import ProxyIP
+from proxy_ip import ProxyIP, ProxyIPSet
+from proxy_controller import ProxyController
 
 
 class CommentSpider(object):
@@ -16,8 +18,11 @@ class CommentSpider(object):
     Spider part
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, use_proxy=False):
+        self.use_proxy = use_proxy
+        if use_proxy:
+            self.controller_proxy = ProxyController()
+            self.ip_set = ProxyIPSet()
 
     __url_base = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{0}/?csrf_token="
 
@@ -31,12 +36,6 @@ class CommentSpider(object):
     __data_loop = __DATA_MAX_LOOP
     __data_current = 0
     __data_list = []
-
-    def get_request_headers(self):
-        """
-        Get request headers.
-        """
-        return self.__headers
 
     def get_request_data(self, once=True):
         """
@@ -57,6 +56,16 @@ class CommentSpider(object):
             data = self.__data_list[self.__data_current]
             self.__data_current += 1
             return data
+
+    def get_proxy_ip(self):
+        """
+        Get a proxy ip from collection
+        """
+        if not self.use_proxy:
+            return None
+        while not self.ip_set.available():
+            self.ip_set = self.controller_proxy.get_proxy()
+        return self.ip_set.pop()
 
     def get_request_url(self, song_id):
         """
@@ -83,13 +92,16 @@ class CommentSpider(object):
             print error.message
         return response
 
-    def get_response_comment(self, song_id, proxy_ip=None):
+    def get_response_comment(self, song_id):
         """
         Send request and analysis response
         """
         comment = SongComment(song_id)
+        proxy_ip = None
+        if self.use_proxy:
+            proxy_ip = self.get_proxy_ip()
         response = self.send_request(self.get_request_url(comment.get_song_id(
-        )), self.get_request_headers(), self.get_request_data(True), proxy_ip)
+        )), self.__headers, self.get_request_data(True), proxy_ip)
         if response is None:
             return None
         content = json.loads(response)
@@ -97,6 +109,5 @@ class CommentSpider(object):
         comment.set_comment_list(content['comments'])
         return comment
 
-
-spider = CommentSpider()
-print spider.get_response_comment('26584163').get_comment_total()
+# spider = CommentSpider()
+# print spider.get_response_comment('26584163').get_comment_total()

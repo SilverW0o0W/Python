@@ -3,6 +3,7 @@
 This is for controlling proxy ip
 """
 
+import random
 import time
 from datetime import datetime, timedelta
 import urllib2
@@ -10,10 +11,11 @@ import threading
 import threadpool
 
 from sqlite_controller import SqliteController
-from proxy_ip import ProxyIP
+from proxy_ip import ProxyIP, ProxyIPSet
 from proxy_spider import ProxySpider
 
 instance_lock = threading.Lock()
+
 
 class ProxyController(object):
     """
@@ -165,7 +167,9 @@ class ProxyController(object):
         Get proxy list from splite and check available
         """
         ip_value_list = self.select_proxy_db(count)
-        return self.convert_db_proxy_to_proxy_ip(ip_value_list)
+        ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
+        random.shuffle(ip_list)
+        return ProxyIPSet(ip_list)
 
     def insert_proxy_db(self, proxy_ip, is_main_thread=True):
         """
@@ -194,7 +198,7 @@ class ProxyController(object):
         """
         sql = self.__sql_delete
         params_list = []
-        params_list.append(proxy_ip.id)
+        params_list.append(proxy_ip.db_id)
         return self.__db_controller.sql_write(sql, params_list, is_main_thread)
 
     def update_proxy_db(self, proxy_ip, is_main_thread=True):
@@ -203,7 +207,7 @@ class ProxyController(object):
         """
         sql = self.__sql_update
         params_list = (proxy_ip.ip, proxy_ip.port, 1 if proxy_ip.is_https else 0,
-                       1 if proxy_ip.available else 0, proxy_ip.verify_time, proxy_ip.id)
+                       1 if proxy_ip.available else 0, proxy_ip.verify_time, proxy_ip.db_id)
         return self.__db_controller.sql_write(sql, params_list, is_main_thread)
 
     def convert_db_proxy_to_proxy_ip(self, ip_value_list):
@@ -383,13 +387,10 @@ class ProxyController(object):
 
 
 controller = ProxyController()
-controller2 = ProxyController()
-print id(controller)
-print id(controller2)
-# proxy = ProxyIP('182.138.249.117', '8118', False, False)
-# print controller.add_proxy(proxy)
-# print controller.get_db_count()
-ip_list = controller.get_proxy()
+# controller2 = ProxyController()
+# print id(controller)
+# print id(controller2)
+ip_set = controller.get_proxy()
 while True:
     time.sleep(5)
 # ip_list = controller.get_proxy()
