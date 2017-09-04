@@ -13,11 +13,14 @@ from sqlite_controller import SqliteController
 from proxy_ip import ProxyIP
 from proxy_spider import ProxySpider
 
+instance_lock = threading.Lock()
 
 class ProxyController(object):
     """
     This is a class for crawling proxy ip
     """
+    __instance = None
+
     __check_http_url = 'http://silvercodingcat.com/python/2017/08/09/Proxy-Spider-Check/'
     __check_https_url = ''
     __check_retry_time = 3
@@ -61,6 +64,18 @@ class ProxyController(object):
         verify_thread = threading.Thread(target=self.verify_db_storage_thread)
         verify_thread.setName('storage_available_checker')
         verify_thread.start()
+
+    def __new__(cls, *args, **kwargs):
+        if not cls.__instance:
+            try:
+                instance_lock.acquire()
+                # double check
+                if not cls.__instance:
+                    cls.__instance = super(ProxyController, cls).__new__(
+                        cls, *args, **kwargs)
+            finally:
+                instance_lock.release()
+        return cls.__instance
 
     def send_check_request(self, proxy_data, check_url):
         """
@@ -368,6 +383,9 @@ class ProxyController(object):
 
 
 controller = ProxyController()
+controller2 = ProxyController()
+print id(controller)
+print id(controller2)
 # proxy = ProxyIP('182.138.249.117', '8118', False, False)
 # print controller.add_proxy(proxy)
 # print controller.get_db_count()
