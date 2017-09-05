@@ -104,7 +104,7 @@ class ProxyController(object):
         try:
             response = opener.open(url)
             self.__thread_result = response.code == 200
-        except Exception, error:
+        except BaseException, exception:
             self.__thread_result = False
             # print error.message
 
@@ -330,7 +330,6 @@ class ProxyController(object):
         Check proxy in db is still available
         """
         verify_thread = None
-        time.sleep(5)
         while True:
             if self.__watcher_thread_stop:
                 if verify_thread is not None:
@@ -350,8 +349,8 @@ class ProxyController(object):
             ip_value_list = self.select_need_check_proxy_list(False)
             proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
             self.verify_proxy_ip_list(proxy_ip_list)
-        except Exception, ex:
-            print ex.message
+        except StandardError, error:
+            print error.message
         finally:
             self.__verify_thread_running = False
             print 'verify proxy done'
@@ -390,7 +389,7 @@ controller = ProxyController()
 # controller2 = ProxyController()
 # print id(controller)
 # print id(controller2)
-ip_set = controller.get_proxy()
+# ip_set = controller.get_proxy()
 while True:
     time.sleep(5)
 # ip_list = controller.get_proxy()

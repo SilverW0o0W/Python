@@ -84,12 +84,27 @@ class CommentSpider(object):
                 proxy_data = {'http': proxy_ip.ip + ':' + proxy_ip.port}
                 proxy_handler = urllib2.ProxyHandler(proxy_data)
                 opener = urllib2.build_opener(proxy_handler)
-                response = opener.open(request).read()
+                response = self.send_request_proxy(opener, request)
             else:
                 response = urllib2.urlopen(request).read()
-        except urllib2.URLError, error:
+        except StandardError, error:
             response = None
             print error.message
+        return response
+
+    def send_request_proxy(self, opener, request):
+        """
+        This is a function for proxy send request
+        """
+        retry = 2
+        response = None
+        for i in range(retry):
+            try:
+                response = opener.open(request).read()
+                break
+            except StandardError:
+                response = None
+                continue
         return response
 
     def get_response_comment(self, song_id):
@@ -109,5 +124,6 @@ class CommentSpider(object):
         comment.set_comment_list(content['comments'])
         return comment
 
-# spider = CommentSpider()
-# print spider.get_response_comment('26584163').get_comment_total()
+
+spider = CommentSpider(True)
+print spider.get_response_comment('26584163').get_comment_total()

@@ -33,7 +33,8 @@ class SqliteController(object):
                 # Create db table
                 return self.sql_write(sql_create_table)
             return True
-        except sqlite3.DatabaseError:
+        except StandardError, error:
+            print error.message
             return False
 
     def establish_db_connection(self, check_thread=True):
@@ -69,8 +70,8 @@ class SqliteController(object):
                 result = cursor.execute(sql, params_list)
             connect.commit()
             return result
-        except sqlite3.DatabaseError, db_error:
-            print db_error.message
+        except StandardError, error:
+            print error.message
             return None
         finally:
             if cursor is not None:
@@ -95,12 +96,12 @@ class SqliteController(object):
                 try:
                     result = cursor.execute(sql, params)
                     row_num += result.rowcount
-                except sqlite3.DatabaseError:
+                except StandardError:
                     continue
             connect.commit()
             return row_num
-        except sqlite3.DatabaseError, db_error:
-            print db_error.message
+        except StandardError, error:
+            print error.message
             return None
         finally:
             if cursor is not None:
@@ -126,8 +127,8 @@ class SqliteController(object):
                 cursor.execute(sql, params_list)
             result_set = cursor.fetchall()
             return result_set
-        except sqlite3.DatabaseError, db_error:
-            print db_error.message
+        except StandardError, error:
+            print error.message
             return None
         finally:
             if cursor is not None:
