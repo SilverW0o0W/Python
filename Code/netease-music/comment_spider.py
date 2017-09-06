@@ -125,5 +125,10 @@ class CommentSpider(object):
         return comment
 
 
-spider = CommentSpider(True)
-print spider.get_response_comment('26584163').get_comment_total()
+# spider = CommentSpider(True)
+# print spider.get_response_comment('26584163').get_comment_total()
+
+spider = CommentSpider()
+comment_list = spider.get_response_comment('26584163').get_comment_list()
+for comment in comment_list:
+    print comment['content']
