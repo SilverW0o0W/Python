@@ -9,7 +9,7 @@ import urllib
 import urllib2
 from encrypto import generate_data
 from music import SongComment
-from proxy_ip import ProxyIP, ProxyIPSet
+from proxy_ip import ProxyIPSet
 from proxy_controller import ProxyController
 
 
@@ -39,7 +39,7 @@ class CommentSpider(object):
 
     def get_request_data(self, once=True):
         """
-        Get request encrypt data
+        Get request encrypt data for total comment
         """
         if once:
             return generate_data()
@@ -56,6 +56,16 @@ class CommentSpider(object):
             data = self.__data_list[self.__data_current]
             self.__data_current += 1
             return data
+
+    def get_request_data_list(self, total, limit=20):
+        """
+        Get request encrypt data for one song
+        """
+        data_list = []
+        for i in range(total / limit):
+            data = generate_data(i * limit, limit)
+            data_list.append(data)
+        return data_list[::-1]
 
     def get_proxy_ip(self):
         """
@@ -107,28 +117,49 @@ class CommentSpider(object):
                 continue
         return response
 
-    def get_response_comment(self, song_id):
+    def get_response_comment(self, song_id, request_data=None, retry=False):
         """
         Send request and analysis response
         """
         comment = SongComment(song_id)
         proxy_ip = None
-        if self.use_proxy:
-            proxy_ip = self.get_proxy_ip()
-        response = self.send_request(self.get_request_url(comment.get_song_id(
-        )), self.__headers, self.get_request_data(True), proxy_ip)
+        request_data = self.get_request_data() if request_data is None else request_data
+        url = self.get_request_url(song_id)
+        response = None
+        while response is None:
+            proxy_ip = self.get_proxy_ip() if self.use_proxy else None
+            response = self.send_request(
+                url, self.__headers, request_data, proxy_ip)
+            if not retry:
+                break
         if response is None:
-            return None
+            return response
         content = json.loads(response)
         comment.set_comment_total(content['total'])
         comment.set_comment_list(content['comments'])
         return comment
 
+    def get_song_all_comment(self, song_id):
+        """
+        Get a song all comment
+        """
+        total_comment = self.get_response_comment(song_id)
+        total = total_comment.get_comment_total()
+        data_list = self.get_request_data_list(total)
+        comment_list = []
+        for data in data_list:
+            temp = self.get_response_comment(song_id, request_data=data)
+            comment_list.append(temp)
+        return comment_list
 
 # spider = CommentSpider(True)
 # print spider.get_response_comment('26584163').get_comment_total()
 
+
 spider = CommentSpider()
-comment_list = spider.get_response_comment('26584163').get_comment_list()
+comment_list = spider.get_song_all_comment('26620939')
+
 for comment in comment_list:
-    print comment['content']
+    temp_list = comment.get_comment_list()
+    for temp in temp_list[::-1]:
+        print temp['content']
