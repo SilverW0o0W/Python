@@ -4,6 +4,7 @@ Aim:
 Initialize a CommentSpider instance, add call function with a song id. Return SongComment
 """
 
+import time
 import json
 import urllib
 import urllib2
@@ -73,8 +74,12 @@ class CommentSpider(object):
         """
         if not self.use_proxy:
             return None
+        first = True
         while not self.ip_set.available():
+            if not first:
+                time.sleep(5)
             self.ip_set = self.controller_proxy.get_proxy()
+            first = False
         return self.ip_set.pop()
 
     def get_request_url(self, song_id):
@@ -110,7 +115,7 @@ class CommentSpider(object):
         response = None
         for i in range(retry):
             try:
-                response = opener.open(request).read()
+                response = opener.open(request, timeout=30).read()
                 break
             except StandardError:
                 response = None
@@ -125,30 +130,47 @@ class CommentSpider(object):
         proxy_ip = None
         request_data = self.get_request_data() if request_data is None else request_data
         url = self.get_request_url(song_id)
-        response = None
-        while response is None:
+        content = None
+        while content is None:
             proxy_ip = self.get_proxy_ip() if self.use_proxy else None
             response = self.send_request(
                 url, self.__headers, request_data, proxy_ip)
+            content = self.check_content(response, proxy_ip)
             if not retry:
                 break
-        if response is None:
-            return response
-        content = json.loads(response)
+        if content is None:
+            return None
         comment.set_comment_total(content['total'])
         comment.set_comment_list(content['comments'])
         return comment
 
-    def get_song_all_comment(self, song_id):
+    def check_content(self, response, proxy_ip):
+        """
+        Add an ip to the black list if it's fake
+        """
+        if response is None:
+            return None
+        if self.use_proxy:
+            try:
+                return json.loads(response)
+            except StandardError:
+                self.controller_proxy.add_black_list(proxy_ip)
+                return None
+        else:
+            content = json.loads(response)
+            return content
+
+    def get_song_all_comment(self, song_id, retry=False):
         """
         Get a song all comment
         """
-        total_comment = self.get_response_comment(song_id)
+        total_comment = self.get_response_comment(song_id, retry=True)
         total = total_comment.get_comment_total()
         data_list = self.get_request_data_list(total)
         comment_list = []
         for data in data_list:
-            temp = self.get_response_comment(song_id, request_data=data)
+            temp = self.get_response_comment(
+                song_id, request_data=data, retry=retry)
             comment_list.append(temp)
         return comment_list
 
@@ -156,8 +178,8 @@ class CommentSpider(object):
 # print spider.get_response_comment('26584163').get_comment_total()
 
 
-spider = CommentSpider()
-comment_list = spider.get_song_all_comment('26620939')
+spider = CommentSpider(True)
+comment_list = spider.get_song_all_comment('26620939', True)
 
 for comment in comment_list:
     temp_list = comment.get_comment_list()
