@@ -3,8 +3,6 @@
 This is for controlling proxy ip
 """
 
-from enum import Enum
-
 import random
 import time
 from datetime import datetime, timedelta
@@ -17,9 +15,6 @@ from proxy_ip import ProxyIP, ProxyIPSet
 from proxy_spider import ProxySpider
 
 instance_lock = threading.Lock()
-
-RequestResult = Enum(
-    'RequestResult', ('Success', 'Failed', 'Forbidden', 'Exception'))
 
 
 class ProxyController(object):
@@ -86,33 +81,12 @@ class ProxyController(object):
                 instance_lock.release()
         return cls.__instance
 
-    def send_check_request(self, proxy_data, url, is_https):
+    def send_check_request(self, opener, url, is_https):
         """
         Send request to check server
         """
-        proxy_handler = urllib2.ProxyHandler(proxy_data)
-        opener = urllib2.build_opener(proxy_handler)
-        try:
-            response = opener.open(url, timeout=self.__thread_timeout)
-            if response.code == 200:
-                return self.check_fake_proxy(response, is_https)
-            else:
-                return RequestResult.Failed
-        except BaseException:
-            return RequestResult.Exception
-
-    def check_fake_proxy(self, response, is_https):
-        """
-        Check fake proxy.
-        """
-        if self.check_fake_proxy:
-            url = self.__check_https_url if is_https else self.__check_http_url
-            if response.url == url:
-                return RequestResult.Success
-            else:
-                return RequestResult.Forbidden
-        else:
-            return RequestResult.Success
+        response = opener.open(url, timeout=self.__thread_timeout)
+        return response.code == 200 and response.url == url
 
     def check_proxy(self, proxy_ip):
         """
@@ -122,20 +96,24 @@ class ProxyController(object):
         ip_port = proxy_ip.ip + ':' + proxy_ip.port
         proxy_data = {transfer_method: ip_port}
         check_url = self.__check_https_url if proxy_ip.is_https else self.__check_http_url
+        proxy_handler = urllib2.ProxyHandler(proxy_data)
+        opener = urllib2.build_opener(proxy_handler)
+        result = False
         for i in range(self.__check_retry_time):
-            result = self.send_check_request(
-                proxy_data, check_url, proxy_ip.is_https)
-            if result != RequestResult.Exception:
+            try:
+                result = self.send_check_request(
+                    opener, check_url, proxy_ip.is_https)
                 break
-        proxy_ip.available = True if result == RequestResult.Success else False
+            except BaseException:
+                continue
+        proxy_ip.available = result
         return result
 
     def add_proxy(self, proxy_ip):
         """
         Check proxy available and add into sqlite db.
         """
-        result = self.check_proxy(proxy_ip)
-        if result == RequestResult.Success or result == RequestResult.Forbidden:
+        if self.check_proxy(proxy_ip):
             if self.check_proxy_exist(proxy_ip):
                 return False
             else:
@@ -167,8 +145,7 @@ class ProxyController(object):
         """
         insert_list = []
         for proxy_ip in proxy_ip_list:
-            result = self.check_proxy(proxy_ip)
-            if result == RequestResult.Success or result == RequestResult.Forbidden:
+            if self.check_proxy(proxy_ip):
                 if self.check_proxy_exist(proxy_ip):
                     continue
                 else:
@@ -382,8 +359,7 @@ class ProxyController(object):
         """
         Check single proxy ip and delete inavaildable ip.
         """
-        result = self.check_proxy(proxy_ip)
-        if result == RequestResult.Success or result == RequestResult.Forbidden:
+        if self.check_proxy(proxy_ip):
             proxy_ip.verify_time = time.strftime(
                 '%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
             self.update_proxy_db(proxy_ip, False)
