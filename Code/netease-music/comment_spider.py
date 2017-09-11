@@ -58,15 +58,16 @@ class CommentSpider(object):
             self.__data_current += 1
             return data
 
-    def get_request_data_list(self, total, limit=20):
+    def get_request_data_dict(self, total, limit=20):
         """
         Get request encrypt data for one song
         """
-        data_list = []
-        for i in range(total / limit):
+        data_dict = {}
+        page = total / limit
+        for i in range(page):
             data = generate_data(i * limit, limit)
-            data_list.append(data)
-        return data_list[::-1]
+            data_dict[page - i - 1] = data
+        return data_dict
 
     def get_proxy_ip(self):
         """
@@ -166,11 +167,11 @@ class CommentSpider(object):
         """
         total_comment = self.get_response_comment(song_id, retry=True)
         total = total_comment.get_comment_total()
-        data_list = self.get_request_data_list(total)
+        data_dict = self.get_request_data_dict(total)
         comment_list = []
-        for data in data_list:
+        for index in data_dict:
             temp = self.get_response_comment(
-                song_id, request_data=data, retry=retry)
+                song_id, request_data=data_dict[index], retry=retry)
             comment_list.append(temp)
         return comment_list
 
@@ -178,7 +179,7 @@ class CommentSpider(object):
 # print spider.get_response_comment('26584163').get_comment_total()
 
 
-spider = CommentSpider(True)
+spider = CommentSpider()
 comment_list = spider.get_song_all_comment('26620939', True)
 
 for comment in comment_list:
