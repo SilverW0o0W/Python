@@ -27,7 +27,8 @@ class CommentSpider(object):
             self.controller_proxy = ProxyController()
             self.ip_set = ProxyIPSet()
 
-    __url_base = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{0}/?csrf_token="
+    __comment_url = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{0}/?csrf_token="
+    __hot_comment_url = "http://music.163.com/weapi/v1/resource/hotcomments/R_SO_4_{0}/?csrf_token="
 
     __headers = {
         'Cookie': 'appver=1.5.0.75771;',
@@ -110,7 +111,7 @@ class CommentSpider(object):
         """
         Get concat request url
         """
-        return str.format(self.__url_base, song_id)
+        return str.format(self.__comment_url, song_id)
 
     def send_request(self, url, headers, data, proxy_ip=None):
         """
