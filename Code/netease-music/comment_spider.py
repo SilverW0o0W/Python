@@ -4,6 +4,8 @@ Aim:
 Initialize a CommentSpider instance, add call function with a song id. Return SongComment
 """
 
+import threading
+
 import time
 import json
 import urllib
@@ -37,6 +39,8 @@ class CommentSpider(object):
     __data_loop = __DATA_MAX_LOOP
     __data_current = 0
     __data_list = []
+
+    __proxy_lock = threading.Lock()
 
     def get_request_data(self, once=True):
         """
@@ -82,6 +86,25 @@ class CommentSpider(object):
             self.ip_set = self.controller_proxy.get_proxy()
             first = False
         return self.ip_set.pop()
+
+    def get_safe_proxy_ip(self):
+        """
+        Get a proxy ip from collection
+        """
+        if not self.use_proxy:
+            return None
+        first = True
+        self.__proxy_lock.acquire()
+        try:
+            while not self.ip_set.available():
+                if not first:
+                    time.sleep(5)
+                self.ip_set = self.controller_proxy.get_proxy()
+                first = False
+            proxy_ip = self.ip_set.pop()
+        finally:
+            self.__proxy_lock.release()
+        return proxy_ip
 
     def get_request_url(self, song_id):
         """
@@ -141,9 +164,16 @@ class CommentSpider(object):
                 break
         if content is None:
             return None
-        comment.set_comment_total(content['total'])
-        comment.set_comment_list(content['comments'])
+        comment.comment_total = content['total']
+        comment.comments = content['comments']
+        comment.comment_more = content['more']
+        if 'hotComments' in content:
+            comment.hot_comments = content['hotComments']
+            comment.hot_comment_more = content['moreHot']
         return comment
+
+    def get_all_hot_comment(self):
+        pass
 
     def check_content(self, response, proxy_ip):
         """
@@ -166,13 +196,13 @@ class CommentSpider(object):
         Get a song all comment
         """
         total_comment = self.get_response_comment(song_id, retry=True)
-        total = total_comment.get_comment_total()
+        total = total_comment.comment_total
         data_dict = self.get_request_data_dict(total)
         comment_list = []
         for index in data_dict:
-            temp = self.get_response_comment(
+            temp_comment = self.get_response_comment(
                 song_id, request_data=data_dict[index], retry=retry)
-            comment_list.append(temp)
+            comment_list.append(temp_comment)
         return comment_list
 
 # spider = CommentSpider(True)
@@ -180,9 +210,12 @@ class CommentSpider(object):
 
 
 spider = CommentSpider()
-comment_list = spider.get_song_all_comment('26620939', True)
+# 60 total
+# comment_list = spider.get_song_all_comment('26620939', True)
+# 17xxk total
+comment_list = spider.get_song_all_comment('186016', True)
 
 for comment in comment_list:
-    temp_list = comment.get_comment_list()
+    temp_list = comment.comments
     for temp in temp_list[::-1]:
         print temp['content']
