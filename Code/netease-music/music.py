@@ -28,3 +28,15 @@ class SongComment(SongBase):
         self.hot_comments = None
         self.comment_more = False
         self.hot_comment_more = False
+
+
+class SongHotComment(SongBase):
+    """
+    For hot comment content
+    """
+
+    def __init__(self, song_id=None, artist_ids=None, album_id=None):
+        SongBase.__init__(self, song_id, artist_ids, album_id)
+        self.comment_total = 0
+        self.hot_comments = None
+        self.hot_comment_more = False

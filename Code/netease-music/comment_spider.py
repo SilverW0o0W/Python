@@ -11,7 +11,7 @@ import json
 import urllib
 import urllib2
 from encrypto import generate_data
-from music import SongComment
+from music import SongComment, SongHotComment
 from proxy_ip import ProxyIPSet
 from proxy_controller import ProxyController
 
@@ -68,7 +68,7 @@ class CommentSpider(object):
         Get request encrypt data for one song
         """
         data_dict = {}
-        page = total / limit
+        page = total / limit + 1
         for i in range(page):
             data = generate_data(i * limit, limit)
             data_dict[page - i - 1] = data
@@ -107,11 +107,14 @@ class CommentSpider(object):
             self.__proxy_lock.release()
         return proxy_ip
 
-    def get_request_url(self, song_id):
+    def get_request_url(self, song_id, hot_comment=False):
         """
         Get concat request url
         """
-        return str.format(self.__comment_url, song_id)
+        if hot_comment:
+            return str.format(self.__hot_comment_url, song_id)
+        else:
+            return str.format(self.__comment_url, song_id)
 
     def send_request(self, url, headers, data, proxy_ip=None):
         """
@@ -147,7 +150,7 @@ class CommentSpider(object):
                 continue
         return response
 
-    def get_response_comment(self, song_id, request_data=None, retry=False):
+    def get_comment(self, song_id, request_data=None, retry=False):
         """
         Send request and analysis response
         """
@@ -173,8 +176,28 @@ class CommentSpider(object):
             comment.hot_comment_more = content['moreHot']
         return comment
 
-    def get_all_hot_comment(self):
-        pass
+    def get_hot_comment(self, song_id, request_data=None, retry=False):
+        """
+        Send request and analysis response
+        """
+        comment = SongHotComment(song_id)
+        proxy_ip = None
+        request_data = self.get_request_data() if request_data is None else request_data
+        url = self.get_request_url(song_id, True)
+        content = None
+        while content is None:
+            proxy_ip = self.get_proxy_ip() if self.use_proxy else None
+            response = self.send_request(
+                url, self.__headers, request_data, proxy_ip)
+            content = self.check_content(response, proxy_ip)
+            if not retry:
+                break
+        if content is None:
+            return None
+        comment.comment_total = content['total']
+        comment.hot_comments = content['hotComments']
+        comment.hot_comment_more = content['hasMore']
+        return comment
 
     def check_content(self, response, proxy_ip):
         """
@@ -196,12 +219,12 @@ class CommentSpider(object):
         """
         Get a song all comment
         """
-        total_comment = self.get_response_comment(song_id, retry=True)
+        total_comment = self.get_comment(song_id, retry=True)
         total = total_comment.comment_total
         data_dict = self.get_request_data_dict(total)
         comment_list = []
         for index in data_dict:
-            temp_comment = self.get_response_comment(
+            temp_comment = self.get_comment(
                 song_id, request_data=data_dict[index], retry=retry)
             comment_list.append(temp_comment)
         return comment_list
@@ -212,9 +235,9 @@ class CommentSpider(object):
 
 spider = CommentSpider()
 # 60 total
-# comment_list = spider.get_song_all_comment('26620939', True)
+comment_list = spider.get_song_all_comment('26620939', True)
 # 17xxk total
-comment_list = spider.get_song_all_comment('186016', True)
+# comment_list = spider.get_song_all_comment('186016', True)
 
 for comment in comment_list:
     temp_list = comment.comments
