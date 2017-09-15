@@ -150,7 +150,7 @@ class CommentSpider(object):
                 continue
         return response
 
-    def get_comment(self, song_id, request_data=None, retry=False):
+    def request_comment(self, song_id, request_data=None, retry=False):
         """
         Send request and analysis response
         """
@@ -176,7 +176,7 @@ class CommentSpider(object):
             comment.hot_comment_more = content['moreHot']
         return comment
 
-    def get_hot_comment(self, song_id, request_data=None, retry=False):
+    def request_hot_comment(self, song_id, request_data=None, retry=False):
         """
         Send request and analysis response
         """
@@ -219,27 +219,44 @@ class CommentSpider(object):
         """
         Get a song all comment
         """
-        total_comment = self.get_comment(song_id, retry=True)
+        total_comment = self.request_comment(song_id, retry=True)
         total = total_comment.comment_total
         data_dict = self.get_request_data_dict(total)
         comment_list = []
         for index in data_dict:
-            temp_comment = self.get_comment(
+            temp_comment = self.request_comment(
                 song_id, request_data=data_dict[index], retry=retry)
             comment_list.append(temp_comment)
         return comment_list
 
-# spider = CommentSpider(True)
-# print spider.get_response_comment('26584163').get_comment_total()
+    def get_song_hot_comment(self, song_id, retry=False):
+        """
+        Get a song all comment
+        """
+        total_comment = self.request_hot_comment(song_id, retry=True)
+        total = total_comment.comment_total
+        data_dict = self.get_request_data_dict(total)
+        comment_list = []
+        for index in data_dict:
+            temp_comment = self.request_hot_comment(
+                song_id, request_data=data_dict[index], retry=retry)
+            comment_list.append(temp_comment)
+        return comment_list[::-1]
 
-
-spider = CommentSpider()
+spider = CommentSpider(True)
+# 70+ hot comment
+comment_list = spider.get_song_hot_comment('26584163', True)
 # 60 total
-comment_list = spider.get_song_all_comment('26620939', True)
+# comment_list = spider.get_song_all_comment('26620939', True)
 # 17xxk total
 # comment_list = spider.get_song_all_comment('186016', True)
 
+# for comment in comment_list:
+#     temp_list = comment.comments
+#     for temp in temp_list[::-1]:
+#         print temp['content']
+
 for comment in comment_list:
-    temp_list = comment.comments
-    for temp in temp_list[::-1]:
+    temp_list = comment.hot_comments
+    for temp in temp_list:
         print temp['content']
