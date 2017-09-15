@@ -14,6 +14,7 @@ from encrypto import generate_data
 from music import SongComment, SongHotComment
 from proxy_ip import ProxyIPSet
 from proxy_controller import ProxyController
+from return_thread import ReturnThread
 
 
 class CommentSpider(object):
@@ -215,7 +216,7 @@ class CommentSpider(object):
             content = json.loads(response)
             return content
 
-    def get_song_all_comment(self, song_id, retry=False):
+    def get_song_comment(self, song_id, retry=False):
         """
         Get a song all comment
         """
@@ -229,9 +230,21 @@ class CommentSpider(object):
             comment_list.append(temp_comment)
         return comment_list
 
-    def get_song_hot_comment(self, song_id, retry=False):
+    def get_song_comment_multithread(self, song_id, retry=False):
         """
         Get a song all comment
+        """
+        total_comment = self.request_comment(song_id, retry=True)
+        total = total_comment.comment_total
+        data_dict = self.get_request_data_dict(total)
+        comment_list = []
+        for index in data_dict:
+            pass
+        return comment_list
+
+    def get_song_hot_comment(self, song_id, retry=False):
+        """
+        Get a song all hot comment.
         """
         total_comment = self.request_hot_comment(song_id, retry=True)
         total = total_comment.comment_total
@@ -242,6 +255,7 @@ class CommentSpider(object):
                 song_id, request_data=data_dict[index], retry=retry)
             comment_list.append(temp_comment)
         return comment_list[::-1]
+
 
 spider = CommentSpider(True)
 # 70+ hot comment
