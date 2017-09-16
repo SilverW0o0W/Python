@@ -4,12 +4,14 @@ Aim:
 Initialize a CommentSpider instance, add call function with a song id. Return SongComment
 """
 
-import threading
-
 import time
 import json
 import urllib
 import urllib2
+
+import threading
+import threadpool
+
 from encrypto import generate_data
 from music import SongComment, SongHotComment
 from proxy_ip import ProxyIPSet
@@ -239,6 +241,7 @@ class CommentSpider(object):
         data_dict = self.get_request_data_dict(total)
         comment_list = []
         for index in data_dict:
+            # https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python
             pass
         return comment_list
 
