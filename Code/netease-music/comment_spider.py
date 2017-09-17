@@ -44,6 +44,8 @@ class CommentSpider(object):
     __data_current = 0
     __data_list = []
 
+    __request_thread_limit = 50
+
     __proxy_lock = threading.Lock()
 
     def get_request_data(self, once=True):
@@ -71,7 +73,7 @@ class CommentSpider(object):
         Get request encrypt data for one song
         """
         data_dict = {}
-        page = total / limit + 1
+        page = total / limit
         for i in range(page):
             data = generate_data(i * limit, limit)
             data_dict[page - i - 1] = data
@@ -239,11 +241,26 @@ class CommentSpider(object):
         total_comment = self.request_comment(song_id, retry=True)
         total = total_comment.comment_total
         data_dict = self.get_request_data_dict(total)
-        comment_list = []
+        comment_dict = {}
+        param_list = []
         for index in data_dict:
-            # https://stackoverflow.com/questions/6893968/how-to-get-the-return-value-from-a-thread-in-python
-            pass
-        return comment_list
+            param = ((song_id, data_dict[index],
+                      retry, index, comment_dict,), None)
+            param_list.append(param)
+        requests = threadpool.makeRequests(
+            self.request_comment_thread, param_list)
+        pool = threadpool.ThreadPool(self.__request_thread_limit)
+        [pool.putRequest(request) for request in requests]
+        pool.wait()
+        return comment_dict
+
+    def request_comment_thread(self, song_id, data, retry, index, comment_dict):
+        """
+        This is multi-threading request.
+        """
+        comment = self.request_comment(
+            song_id, request_data=data, retry=retry)
+        comment_dict[index] = comment
 
     def get_song_hot_comment(self, song_id, retry=False):
         """
@@ -260,11 +277,12 @@ class CommentSpider(object):
         return comment_list[::-1]
 
 
-spider = CommentSpider(True)
+spider = CommentSpider()
 # 70+ hot comment
-comment_list = spider.get_song_hot_comment('26584163', True)
+# comment_list = spider.get_song_hot_comment('26584163', True)
 # 60 total
-# comment_list = spider.get_song_all_comment('26620939', True)
+# comment_list = spider.get_song_comment('26620939', True)
+comment_dict = spider.get_song_comment_multithread('26620939', True)
 # 17xxk total
 # comment_list = spider.get_song_all_comment('186016', True)
 
@@ -273,7 +291,12 @@ comment_list = spider.get_song_hot_comment('26584163', True)
 #     for temp in temp_list[::-1]:
 #         print temp['content']
 
-for comment in comment_list:
-    temp_list = comment.hot_comments
-    for temp in temp_list:
+for index in comment_dict:
+    temp_list = comment_dict[index].comments
+    for temp in temp_list[::-1]:
         print temp['content']
+
+# for comment in comment_list:
+#     temp_list = comment.hot_comments
+#     for temp in temp_list:
+#         print temp['content']
