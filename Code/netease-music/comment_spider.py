@@ -86,20 +86,6 @@ class CommentSpider(object):
         if not self.use_proxy:
             return None
         first = True
-        while not self.ip_set.available():
-            if not first:
-                time.sleep(5)
-            self.ip_set = self.controller_proxy.get_proxy()
-            first = False
-        return self.ip_set.pop()
-
-    def get_safe_proxy_ip(self):
-        """
-        Get a proxy ip from collection
-        """
-        if not self.use_proxy:
-            return None
-        first = True
         self.__proxy_lock.acquire()
         try:
             while not self.ip_set.available():
@@ -135,9 +121,9 @@ class CommentSpider(object):
                 response = self.send_request_proxy(opener, request)
             else:
                 response = urllib2.urlopen(request).read()
-        except StandardError, error:
+        except BaseException, error:
             response = None
-            print error.message
+            # print error.message
         return response
 
     def send_request_proxy(self, opener, request):
@@ -150,7 +136,7 @@ class CommentSpider(object):
             try:
                 response = opener.open(request, timeout=30).read()
                 break
-            except StandardError:
+            except BaseException:
                 response = None
                 continue
         return response
@@ -277,7 +263,7 @@ class CommentSpider(object):
         return comment_list[::-1]
 
 
-spider = CommentSpider()
+spider = CommentSpider(True)
 # 70+ hot comment
 # comment_list = spider.get_song_hot_comment('26584163', True)
 # 60 total

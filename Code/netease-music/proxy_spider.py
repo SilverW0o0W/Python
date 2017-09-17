@@ -16,6 +16,11 @@ class ProxySpider(object):
     __header = {}
     __header['User-Agent'] = __user_agent
 
+    def __init__(self, is_https):
+        self.is_https = is_https
+        self.last_page = 0
+        self.last_crawl_time = None
+
     def get_proxy_ip(self, page_count=2):
         """
         Get proxy ip
