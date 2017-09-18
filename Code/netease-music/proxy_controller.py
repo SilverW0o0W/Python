@@ -41,7 +41,7 @@ class ProxyController(object):
     __verify_proxy_minutes = 5
     __verify_pool_max = 30
 
-    __proxy_spider = ProxySpider()
+    __proxy_spider = ProxySpider(False)
     __proxy_spider_page = 2
 
     __sql_create_table = "create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port VARCHAR(10),https TINYINT,available TINYINT,verify_time TIMESTAMP default (datetime('now', 'localtime')), create_time TIMESTAMP default (datetime('now', 'localtime')))"
