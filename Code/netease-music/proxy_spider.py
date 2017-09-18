@@ -16,8 +16,7 @@ class ProxySpider(object):
     __header = {}
     __header['User-Agent'] = __user_agent
 
-    def __init__(self, is_https):
-        self.is_https = is_https
+    def __init__(self):
         self.last_page = 0
         self.last_crawl_time = None
 
@@ -27,7 +26,7 @@ class ProxySpider(object):
         """
         return 0
 
-    def get_proxy_ip(self, page_count=2):
+    def get_proxy_ip(self, is_https, page_count=2):
         """
         Get proxy ip
         """
