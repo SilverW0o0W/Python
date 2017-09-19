@@ -34,13 +34,11 @@ class ProxyController(object):
     __watcher_thread_stop = False
     __crawl_thread_running = False
     __crawl_check_seconds = 30
-    __crawl_thread_pool = None
     __crawl_pool_max = 20
 
     __verify_thread_running = False
     __verify_check_seconds = 300
     __verify_proxy_minutes = 5
-    __verify_thread_pool = None
     __verify_pool_max = 30
 
     __proxy_spider = ProxySpider()
@@ -134,13 +132,11 @@ class ProxyController(object):
             pre = i * split_num
             last = (i + 1) * split_num if i < times else len(proxy_ip_list)
             proxy_ip_split_list.append(proxy_ip_list[pre:last])
-        if not self.__crawl_thread_pool:
-            self.__crawl_thread_pool = threadpool.ThreadPool(
-                self.__crawl_pool_max)
+        pool = threadpool.ThreadPool(self.__crawl_pool_max)
         requests = threadpool.makeRequests(
             self.add_proxy_list_thread, proxy_ip_split_list)
-        [self.__crawl_thread_pool.putRequest(request) for request in requests]
-        self.__crawl_thread_pool.wait()
+        [pool.putRequest(request) for request in requests]
+        pool.wait()
         print 'add proxy done'
 
     def add_proxy_list_thread(self, proxy_ip_list):
@@ -349,13 +345,11 @@ class ProxyController(object):
         """
         Check proxy ip list.
         """
-        if not self.__verify_thread_pool:
-            self.__verify_thread_pool = threadpool.ThreadPool(
-                self.__verify_pool_max)
+        pool = threadpool.ThreadPool(self.__verify_pool_max)
         requests = threadpool.makeRequests(
             self.verify_proxy_ip_thread, proxy_ip_list)
-        [self.__verify_thread_pool.putRequest(request) for request in requests]
-        self.__verify_thread_pool.wait()
+        [pool.putRequest(request) for request in requests]
+        pool.wait()
 
     def verify_proxy_ip_thread(self, proxy_ip):
         """

@@ -21,7 +21,7 @@ class ProxySpider(object):
     def __init__(self):
         self.last_page = 0
         self.last_crawl_time = None
-        self.refresh_minutes = 15
+        self.refresh_minutes = 10
 
     def get_page_number(self, page_count):
         """
@@ -30,8 +30,8 @@ class ProxySpider(object):
         """
         delta = timedelta(minutes=self.refresh_minutes)
         if not self.last_crawl_time or datetime.now() >= self.last_crawl_time + delta:
+            self.last_crawl_time = datetime.now()
             self.last_page = 0
-        self.last_crawl_time = datetime.now()
         page = self.last_page
         self.last_page += page_count
         return page
