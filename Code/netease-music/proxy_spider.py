@@ -3,6 +3,8 @@
 This is for crawling proxy ip from ip website.
 """
 
+from datetime import datetime, timedelta
+
 import urllib2
 from bs4 import BeautifulSoup
 from proxy_ip import ProxyIP
@@ -19,19 +21,27 @@ class ProxySpider(object):
     def __init__(self):
         self.last_page = 0
         self.last_crawl_time = None
+        self.refresh_minutes = 15
 
-    def get_page(self):
+    def get_page_number(self, page_count):
         """
-        Update
+        If not reach proxy's site refresh time. Return next page.
+        Else return new page.
         """
-        return 0
+        delta = timedelta(minutes=self.refresh_minutes)
+        if not self.last_crawl_time or datetime.now() >= self.last_crawl_time + delta:
+            self.last_page = 0
+        self.last_crawl_time = datetime.now()
+        page = self.last_page
+        self.last_page += page_count
+        return page
 
-    def get_proxy_ip(self, is_https, page_count=2):
+    def get_proxy_ip(self, need_https, page_count=2):
         """
         Get proxy ip
         """
         proxy_ip_list = []
-        current_page = self.get_page()
+        current_page = self.get_page_number(page_count)
         page_count += current_page + 1
         for i in range(current_page + 1, page_count):
             try:
@@ -47,7 +57,7 @@ class ProxySpider(object):
                     ip_temp = ProxyIP(tds[1].contents[0],
                                       tds[2].contents[0], is_https)
                     # print ip_temp.ip + '\t' + ip_temp.port + '\t' + str(ip_temp.is_https)
-                    if self.is_https == ip_temp.is_https:
+                    if need_https == ip_temp.is_https:
                         proxy_ip_list.append(ip_temp)
             except StandardError, error:
                 print error.message
