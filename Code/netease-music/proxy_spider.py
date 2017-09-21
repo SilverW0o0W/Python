@@ -63,7 +63,3 @@ class ProxySpider(object):
                 print error.message
                 continue
         return proxy_ip_list
-
-
-# proxy_spider = ProxySpider()
-# proxy_spider.get_proxy_ip(2)

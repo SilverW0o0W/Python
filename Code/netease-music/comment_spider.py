@@ -263,12 +263,13 @@ class CommentSpider(object):
         return comment_list[::-1]
 
 
-spider = CommentSpider(True)
+if __name__ == '__main__':
+    spider = CommentSpider(True)
 # 70+ hot comment
 # comment_list = spider.get_song_hot_comment('26584163', True)
 # 60 total
 # comment_list = spider.get_song_comment('26620939', True)
-comment_dict = spider.get_song_comment_multithread('26620939', True)
+    comment_dict = spider.get_song_comment_multithread('26620939', True)
 # 17xxk total
 # comment_list = spider.get_song_all_comment('186016', True)
 
@@ -277,10 +278,10 @@ comment_dict = spider.get_song_comment_multithread('26620939', True)
 #     for temp in temp_list[::-1]:
 #         print temp['content']
 
-for index in comment_dict:
-    temp_list = comment_dict[index].comments
-    for temp in temp_list[::-1]:
-        print temp['content']
+    for index in comment_dict:
+        temp_list = comment_dict[index].comments
+        for temp in temp_list[::-1]:
+            print temp['content']
 
 # for comment in comment_list:
 #     temp_list = comment.hot_comments
