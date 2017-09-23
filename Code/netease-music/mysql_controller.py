@@ -4,33 +4,28 @@ This is for controlling sqlite
 """
 
 import os
-import sqlite3
+import mysql.connector
 
 
-class SqliteController(object):
+class MysqlController(object):
     """
     This is a class for controlling sqlite
     """
     __db_connection = None
     __db_min_storage = 10
 
-    def __init__(self, sql_create_table, db_path):
-        self.sql_create_table = sql_create_table
-        self.db_path = db_path
-        self.init_db(sql_create_table)
+    def __init__(self, user, password, database):
+        self.user = user
+        self.password = password
+        self.database = database
+        self.init_db()
 
-    def init_db(self, sql_create_table):
+    def init_db(self):
         """
         Initialize sqlite db.
         """
-        if not sql_create_table:
-            sql_create_table = self.sql_create_table
         try:
-            db_exist = os.path.exists(self.db_path)
             self.__db_connection = self.establish_db_connection()
-            if not db_exist:
-                # Create db table
-                return self.sql_write(sql_create_table)
             return True
         except StandardError, error:
             print error.message
@@ -41,7 +36,7 @@ class SqliteController(object):
         Establish sqlite connection.
         Return: connection
         """
-        return sqlite3.connect(self.db_path, check_same_thread=check_thread)
+        return mysql.connector.connect(user=self.user, password=self.password, database=self.database)
 
     def dispose_db_connection(self):
         """
@@ -134,3 +129,7 @@ class SqliteController(object):
                 cursor.close()
             if is_main_thread is False and connect is not None:
                 connect.close()
+
+
+if __name__ == '__main__':
+    pass
