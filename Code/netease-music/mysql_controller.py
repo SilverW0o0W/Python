@@ -31,7 +31,7 @@ class MysqlController(object):
             print error.message
             return False
 
-    def establish_db_connection(self, check_thread=True):
+    def establish_db_connection(self):
         """
         Establish sqlite connection.
         Return: connection
@@ -46,7 +46,7 @@ class MysqlController(object):
             self.__db_connection.close()
             self.__db_connection = None
 
-    def sql_write(self, sql, params_list=None, is_main_thread=True):
+    def sql_write(self, sql, params_list=None):
         """
         Execute sqlite sql. For write.
         """
@@ -73,7 +73,7 @@ class MysqlController(object):
             if is_main_thread is False and connect is not None:
                 connect.close()
 
-    def sql_write_list(self, sql, params_list, is_main_thread=True):
+    def sql_write_list(self, sql, params_list):
         """
         Execute sqlite sql. For write.
         """
@@ -103,7 +103,7 @@ class MysqlController(object):
             if is_main_thread is False and connect is not None:
                 connect.close()
 
-    def sql_read(self, sql, params_list=None, is_main_thread=True):
+    def sql_read(self, sql, params_list=None):
         """
         Execute sqlite sql. For read.
         """
