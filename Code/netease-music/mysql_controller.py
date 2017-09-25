@@ -3,7 +3,6 @@
 This is for controlling sqlite
 """
 
-import os
 import mysql.connector
 
 
@@ -11,25 +10,12 @@ class MysqlController(object):
     """
     This is a class for controlling sqlite
     """
-    __db_connection = None
-    __db_min_storage = 10
 
     def __init__(self, user, password, database):
         self.user = user
         self.password = password
         self.database = database
-        self.init_db()
-
-    def init_db(self):
-        """
-        Initialize sqlite db.
-        """
-        try:
-            self.__db_connection = self.establish_db_connection()
-            return True
-        except StandardError, error:
-            print error.message
-            return False
+        self.db_connection = self.establish_db_connection()
 
     def establish_db_connection(self):
         """
@@ -42,9 +28,8 @@ class MysqlController(object):
         """
         Close db connection
         """
-        if self.__db_connection != None:
-            self.__db_connection.close()
-            self.__db_connection = None
+        if self.db_connection != None:
+            self.db_connection.close()
 
     def sql_write(self, sql, params_list=None):
         """
@@ -53,10 +38,7 @@ class MysqlController(object):
         cursor = None
         connect = None
         try:
-            if is_main_thread:
-                connect = self.__db_connection
-            else:
-                connect = self.establish_db_connection(False)
+            connect = self.db_connection
             cursor = connect.cursor()
             if params_list is None:
                 result = cursor.execute(sql)
@@ -70,8 +52,6 @@ class MysqlController(object):
         finally:
             if cursor is not None:
                 cursor.close()
-            if is_main_thread is False and connect is not None:
-                connect.close()
 
     def sql_write_list(self, sql, params_list):
         """
@@ -81,10 +61,7 @@ class MysqlController(object):
         cursor = None
         row_num = 0
         try:
-            if is_main_thread:
-                connect = self.__db_connection
-            else:
-                connect = self.establish_db_connection()
+            connect = self.db_connection
             cursor = connect.cursor()
             for params in params_list:
                 try:
@@ -100,8 +77,6 @@ class MysqlController(object):
         finally:
             if cursor is not None:
                 cursor.close()
-            if is_main_thread is False and connect is not None:
-                connect.close()
 
     def sql_read(self, sql, params_list=None):
         """
@@ -110,10 +85,7 @@ class MysqlController(object):
         connect = None
         cursor = None
         try:
-            if is_main_thread:
-                connect = self.__db_connection
-            else:
-                connect = self.establish_db_connection()
+            connect = self.db_connection
             cursor = connect.cursor()
             if params_list is None:
                 cursor.execute(sql)
@@ -127,9 +99,6 @@ class MysqlController(object):
         finally:
             if cursor is not None:
                 cursor.close()
-            if is_main_thread is False and connect is not None:
-                connect.close()
-
 
 if __name__ == '__main__':
     pass
