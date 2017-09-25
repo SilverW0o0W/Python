@@ -1,28 +1,32 @@
 # coding=utf-8
 """
-This is for controlling sqlite
+This file work for controlling mysql
 """
 
+from datetime import datetime
 import mysql.connector
 
 
 class MysqlController(object):
     """
-    This is a class for controlling sqlite
+    This is a class for controlling mysql
     """
 
-    def __init__(self, user, password, database):
+    def __init__(self, user, password, database, host='127.0.0.1', port=3306):
         self.user = user
         self.password = password
         self.database = database
+        self.host = host
+        self.port = port
         self.db_connection = self.establish_db_connection()
 
     def establish_db_connection(self):
         """
-        Establish sqlite connection.
+        Establish mysql connection.
         Return: connection
         """
-        return mysql.connector.connect(user=self.user, password=self.password, database=self.database)
+        self.connect_time = datetime.now()
+        return mysql.connector.connect(user=self.user, password=self.password, database=self.database, host=self.host, port=self.port)
 
     def dispose_db_connection(self):
         """
@@ -33,7 +37,7 @@ class MysqlController(object):
 
     def sql_write(self, sql, params_list=None):
         """
-        Execute sqlite sql. For write.
+        Execute sql. For write.
         """
         cursor = None
         connect = None
@@ -55,7 +59,7 @@ class MysqlController(object):
 
     def sql_write_list(self, sql, params_list):
         """
-        Execute sqlite sql. For write.
+        Execute sql. For write.
         """
         connect = None
         cursor = None
@@ -80,7 +84,7 @@ class MysqlController(object):
 
     def sql_read(self, sql, params_list=None):
         """
-        Execute sqlite sql. For read.
+        Execute sql. For read.
         """
         connect = None
         cursor = None
@@ -99,6 +103,7 @@ class MysqlController(object):
         finally:
             if cursor is not None:
                 cursor.close()
+
 
 if __name__ == '__main__':
     pass

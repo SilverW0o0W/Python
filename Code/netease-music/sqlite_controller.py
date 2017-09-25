@@ -11,15 +11,13 @@ class SqliteController(object):
     """
     This is a class for controlling sqlite
     """
-    __db_connection = None
-    __db_min_storage = 10
 
     def __init__(self, sql_create_table, db_path):
         self.sql_create_table = sql_create_table
         self.db_path = db_path
         self.init_db(sql_create_table)
 
-    def init_db(self, sql_create_table):
+    def init_db(self, sql_create_table=None):
         """
         Initialize sqlite db.
         """
@@ -27,7 +25,7 @@ class SqliteController(object):
             sql_create_table = self.sql_create_table
         try:
             db_exist = os.path.exists(self.db_path)
-            self.__db_connection = self.establish_db_connection()
+            self.db_connection = self.establish_db_connection()
             if not db_exist:
                 # Create db table
                 return self.sql_write(sql_create_table)
@@ -47,9 +45,9 @@ class SqliteController(object):
         """
         Close db connection
         """
-        if self.__db_connection != None:
-            self.__db_connection.close()
-            self.__db_connection = None
+        if self.db_connection != None:
+            self.db_connection.close()
+            self.db_connection = None
 
     def sql_write(self, sql, params_list=None, is_main_thread=True):
         """
@@ -59,7 +57,7 @@ class SqliteController(object):
         connect = None
         try:
             if is_main_thread:
-                connect = self.__db_connection
+                connect = self.db_connection
             else:
                 connect = self.establish_db_connection(False)
             cursor = connect.cursor()
@@ -87,7 +85,7 @@ class SqliteController(object):
         row_num = 0
         try:
             if is_main_thread:
-                connect = self.__db_connection
+                connect = self.db_connection
             else:
                 connect = self.establish_db_connection()
             cursor = connect.cursor()
@@ -116,7 +114,7 @@ class SqliteController(object):
         cursor = None
         try:
             if is_main_thread:
-                connect = self.__db_connection
+                connect = self.db_connection
             else:
                 connect = self.establish_db_connection()
             cursor = connect.cursor()

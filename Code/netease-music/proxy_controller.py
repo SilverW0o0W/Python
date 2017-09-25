@@ -81,7 +81,7 @@ class ProxyController(object):
                 instance_lock.release()
         return cls.__instance
 
-    def send_check_request(self, opener, url, is_https):
+    def send_check_request(self, opener, url):
         """
         Send request to check server
         """
@@ -101,8 +101,7 @@ class ProxyController(object):
         result = False
         for i in range(self.__check_retry_time):
             try:
-                result = self.send_check_request(
-                    opener, check_url, proxy_ip.is_https)
+                result = self.send_check_request(opener, check_url)
                 break
             except BaseException:
                 continue

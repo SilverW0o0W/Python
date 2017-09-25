@@ -16,7 +16,6 @@ from encrypto import generate_data
 from music import SongComment, SongHotComment
 from proxy_ip import ProxyIPSet
 from proxy_controller import ProxyController
-from return_thread import ReturnThread
 
 
 class CommentSpider(object):
