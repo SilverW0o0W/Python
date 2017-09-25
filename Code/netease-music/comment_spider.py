@@ -90,7 +90,7 @@ class CommentSpider(object):
             while not self.ip_set.available():
                 if not first:
                     time.sleep(5)
-                self.ip_set = self.controller_proxy.get_proxy()
+                self.ip_set = self.controller_proxy.get_proxy(False)
                 first = False
             proxy_ip = self.ip_set.pop()
         finally:
@@ -140,7 +140,7 @@ class CommentSpider(object):
                 continue
         return response
 
-    def request_comment(self, song_id, request_data=None, retry=False):
+    def request_comment(self, song_id, request_data=None, retry=False, is_main_thread=True):
         """
         Send request and analysis response
         """
@@ -244,7 +244,7 @@ class CommentSpider(object):
         This is multi-threading request.
         """
         comment = self.request_comment(
-            song_id, request_data=data, retry=retry)
+            song_id, request_data=data, retry=retry, is_main_thread=False)
         comment_dict[index] = comment
 
     def get_song_hot_comment(self, song_id, retry=False):

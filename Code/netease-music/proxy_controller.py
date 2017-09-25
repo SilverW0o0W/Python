@@ -151,11 +151,11 @@ class ProxyController(object):
                     insert_list.append(proxy_ip)
         self.insert_proxy_list_db(insert_list, False)
 
-    def get_proxy(self, count=10):
+    def get_proxy(self, count=10, is_main_thread=True):
         """
         Get proxy list from splite and check available
         """
-        ip_value_list = self.select_proxy_db(count)
+        ip_value_list = self.select_proxy_db(count, is_main_thread)
         ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
         random.shuffle(ip_list)
         return ProxyIPSet(ip_list)
