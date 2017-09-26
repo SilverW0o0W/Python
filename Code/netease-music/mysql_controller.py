@@ -18,9 +18,9 @@ class MysqlController(object):
         self.database = database
         self.host = host
         self.port = port
-        self.db_connection = self.establish_db_connection()
+        self.connection = self.connect()
 
-    def establish_db_connection(self):
+    def connect(self):
         """
         Establish mysql connection.
         Return: connection
@@ -28,12 +28,12 @@ class MysqlController(object):
         self.connect_time = datetime.now()
         return mysql.connector.connect(user=self.user, password=self.password, database=self.database, host=self.host, port=self.port)
 
-    def dispose_db_connection(self):
+    def close(self):
         """
         Close db connection
         """
-        if self.db_connection != None:
-            self.db_connection.close()
+        if self.connection != None:
+            self.connection.close()
 
     def sql_write(self, sql, params_list=None):
         """
@@ -42,7 +42,7 @@ class MysqlController(object):
         cursor = None
         connect = None
         try:
-            connect = self.db_connection
+            connect = self.connection
             cursor = connect.cursor()
             if params_list is None:
                 result = cursor.execute(sql)
@@ -65,7 +65,7 @@ class MysqlController(object):
         cursor = None
         row_num = 0
         try:
-            connect = self.db_connection
+            connect = self.connection
             cursor = connect.cursor()
             for params in params_list:
                 try:
@@ -89,7 +89,7 @@ class MysqlController(object):
         connect = None
         cursor = None
         try:
-            connect = self.db_connection
+            connect = self.connection
             cursor = connect.cursor()
             if params_list is None:
                 cursor.execute(sql)
