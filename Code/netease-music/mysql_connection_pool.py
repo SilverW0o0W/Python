@@ -3,6 +3,7 @@ This file work for controlling mysql connection pool.
 """
 
 from Queue import Queue
+from datetime import datetime, timedelta
 
 import time
 import threading
@@ -24,9 +25,10 @@ class ConnectionPool(object):
         self.port = port
         self.max_connection = max_connection
         self.expire_time = 30
+        self.expire_delta = timedelta(minutes=self.expire_time)
         self.max_reference = 10
         self.queue_active = Queue(max_connection)
-        self.queue_busy = Queue(max_connection)
+        self.connection_busy = 0
         self.pool_dispose = False
 
     def check_connection_thread(self):
@@ -37,7 +39,7 @@ class ConnectionPool(object):
             if self.pool_dispose:
                 break
             connection_lock.acquire()
-            count = self.queue_active.qsize() + self.queue_busy.qsize()
+            count = self.queue_active.qsize() + self.connection_busy
             connection_lock.release()
             if count != self.max_connection:
                 self.create_connection(self.max_connection - count)
@@ -51,6 +53,13 @@ class ConnectionPool(object):
             controller = PoolController(self)
             self.queue_active.put(controller)
 
+    def get_connection(self):
+        """
+        Get connection.
+        """
+        # connection_lock.acquire(timeout = xxx)
+        # code
+        # connection_lock.release()
 
 class PoolController(MysqlController):
     """
@@ -62,13 +71,25 @@ class PoolController(MysqlController):
         MysqlController.__init__(
             pool.user, pool.password, pool.database, pool.host, pool.port)
         self.reference_count = 0
-        self.index = -1
 
     def connect(self):
         pass
 
+    def check_available(self):
+        """
+        Chcek the instance connnection reference and expire
+        """
+        if self.reference_count >= self.pool.max_reference:
+            return False
+        if self.connect_time + self.pool.expire_delta < datetime.now():
+            return False
+        return True
+
     def close(self):
-        if self.reference_count < self.pool.max_reference:
-            pass
+        if self.check_available():
+            self.pool.queue_active.put(self)
         else:
             super(PoolController, self).close()
+        connection_lock.acquire()
+        self.pool.connection_busy -= 1
+        connection_lock.release()
