@@ -29,6 +29,7 @@ class ConnectionPool(object):
         self.max_reference = 10
         self.queue_active = Queue(max_connection)
         self.connection_busy = 0
+        self.retry_time = 3
         self.pool_dispose = False
 
     def check_connection_thread(self):
@@ -57,9 +58,21 @@ class ConnectionPool(object):
         """
         Get connection.
         """
-        # connection_lock.acquire(timeout = xxx)
-        # code
-        # connection_lock.release()
+        connection = None
+        for i in range(self.retry_time):
+            connection_lock.acquire()
+            try:
+                if self.queue_active.qsize() > 0:
+                    connection = self.queue_active.get()
+                    break
+                time.sleep(3)
+            finally:
+                connection_lock.release()
+        if not connection:
+            # need more detail
+            raise Exception()
+        return connection
+
 
 class PoolController(MysqlController):
     """
