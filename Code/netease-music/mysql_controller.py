@@ -12,7 +12,7 @@ class MysqlController(object):
     This is a class for controlling mysql
     """
 
-    def __init__(self, user, password, database, host='127.0.0.1', port=3306):
+    def __init__(self, user, password, database, host=None, port=None):
         self.user = user
         self.password = password
         self.database = database
@@ -26,7 +26,10 @@ class MysqlController(object):
         Return: connection
         """
         self.connect_time = datetime.now()
-        return mysql.connector.connect(user=self.user, password=self.password, database=self.database, host=self.host, port=self.port)
+        if self.port:
+            return mysql.connector.connect(user=self.user, password=self.password, database=self.database, host=self.host, port=self.port)
+        else:
+            return mysql.connector.connect(user=self.user, password=self.password, database=self.database)
 
     def close(self):
         """
@@ -50,9 +53,6 @@ class MysqlController(object):
                 result = cursor.execute(sql, params_list)
             connect.commit()
             return result
-        except StandardError, error:
-            print error.message
-            return None
         finally:
             if cursor is not None:
                 cursor.close()
@@ -75,9 +75,6 @@ class MysqlController(object):
                     continue
             connect.commit()
             return row_num
-        except StandardError, error:
-            print error.message
-            return None
         finally:
             if cursor is not None:
                 cursor.close()
@@ -97,13 +94,14 @@ class MysqlController(object):
                 cursor.execute(sql, params_list)
             result_set = cursor.fetchall()
             return result_set
-        except StandardError, error:
-            print error.message
-            return None
         finally:
             if cursor is not None:
                 cursor.close()
 
 
 if __name__ == '__main__':
-    pass
+    # controller = MysqlController('username', 'password', 'database_name')
+    controller = MysqlController(
+        'username', 'password', 'database_name', 'host', 'port')
+    sql = 'select * from table'
+    result = controller.sql_read(sql)
