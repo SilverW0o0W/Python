@@ -27,7 +27,7 @@ class ConnectionPool(object):
         self.expire_time = 30
         self.expire_delta = timedelta(minutes=self.expire_time)
         self.max_reference = 10
-        self.queue_active = Queue(max_connection)
+        self.queue_available = Queue(max_connection)
         self.connection_busy = 0
         self.retry_time = 3
         self.pool_dispose = False
@@ -40,7 +40,7 @@ class ConnectionPool(object):
             if self.pool_dispose:
                 break
             connection_lock.acquire()
-            count = self.queue_active.qsize() + self.connection_busy
+            count = self.queue_available.qsize() + self.connection_busy
             connection_lock.release()
             if count != self.max_connection:
                 self.create_connection(self.max_connection - count)
@@ -52,7 +52,16 @@ class ConnectionPool(object):
         """
         for i in range(number):
             controller = PoolController(self)
-            self.queue_active.put(controller)
+            self.append_connection(controller)
+
+    def append_connection(self, controller):
+        """
+        Add connection to queue
+        """
+        connection_lock.acquire()
+        if not self.pool_dispose:
+            self.queue_available.put(controller)
+        connection_lock.release()
 
     def get_connection(self):
         """
@@ -62,8 +71,8 @@ class ConnectionPool(object):
         for i in range(self.retry_time):
             connection_lock.acquire()
             try:
-                if self.queue_active.qsize() > 0:
-                    connection = self.queue_active.get()
+                if self.queue_available.qsize() > 0:
+                    connection = self.queue_available.get()
                     break
                 time.sleep(3)
             finally:
@@ -72,6 +81,17 @@ class ConnectionPool(object):
             # need more detail
             raise Exception()
         return connection
+
+    def close(self):
+        """
+        Close available connection.
+        """
+        self.pool_dispose = False
+        connection_lock.acquire()
+        try:
+            break
+        finally:
+            connection_lock.release()
 
 
 class PoolController(MysqlController):
@@ -92,6 +112,8 @@ class PoolController(MysqlController):
         """
         Chcek the instance connnection reference and expire
         """
+        if self.pool.pool_dispose:
+            return False
         if self.reference_count >= self.pool.max_reference:
             return False
         if self.connect_time + self.pool.expire_delta < datetime.now():
@@ -99,10 +121,19 @@ class PoolController(MysqlController):
         return True
 
     def close(self):
+        """
+        Close busy connection
+        """
         if self.check_available():
-            self.pool.queue_active.put(self)
+            self.pool.append_connection(self)
         else:
-            super(PoolController, self).close()
+            self.real_close()
         connection_lock.acquire()
         self.pool.connection_busy -= 1
         connection_lock.release()
+
+    def real_close(self):
+        """
+        Close connection
+        """
+        super(PoolController, self).close()
