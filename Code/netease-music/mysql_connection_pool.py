@@ -88,10 +88,13 @@ class ConnectionPool(object):
         """
         self.pool_dispose = False
         connection_lock.acquire()
-        try:
-            break
-        finally:
-            connection_lock.release()
+        while self.queue_available.qsize > 0:
+            try:
+                controller = self.queue_available.get()
+                controller.real_close()
+            except BaseException, exception:
+                print exception.message
+        connection_lock.release()
 
 
 class PoolController(MysqlController):
