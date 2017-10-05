@@ -23,12 +23,6 @@ class CommentSpider(object):
     Spider part
     """
 
-    def __init__(self, use_proxy=False):
-        self.use_proxy = use_proxy
-        if use_proxy:
-            self.controller_proxy = ProxyController()
-            self.ip_set = ProxyIPSet()
-
     __comment_url = "http://music.163.com/weapi/v1/resource/comments/R_SO_4_{0}/?csrf_token="
     __hot_comment_url = "http://music.163.com/weapi/v1/resource/hotcomments/R_SO_4_{0}/?csrf_token="
 
@@ -46,6 +40,12 @@ class CommentSpider(object):
     __request_thread_limit = 50
 
     __proxy_lock = threading.Lock()
+
+    def __init__(self, use_proxy=False):
+        self.use_proxy = use_proxy
+        if use_proxy:
+            self.controller_proxy = ProxyController()
+            self.ip_set = ProxyIPSet()
 
     def get_request_data(self, once=True):
         """
@@ -73,12 +73,13 @@ class CommentSpider(object):
         """
         data_dict = {}
         page = total / limit
+        page = page if total % limit == 0 else page + 1
         for i in range(page):
             data = generate_data(i * limit, limit)
             data_dict[page - i - 1] = data
         return data_dict
 
-    def get_proxy_ip(self):
+    def get_proxy_ip(self, is_main_thread=True):
         """
         Get a proxy ip from collection
         """
@@ -90,7 +91,8 @@ class CommentSpider(object):
             while not self.ip_set.available():
                 if not first:
                     time.sleep(5)
-                self.ip_set = self.controller_proxy.get_proxy(False)
+                self.ip_set = self.controller_proxy.get_proxy(
+                    is_main_thread=is_main_thread)
                 first = False
             proxy_ip = self.ip_set.pop()
         finally:
@@ -150,7 +152,8 @@ class CommentSpider(object):
         url = self.get_request_url(song_id)
         content = None
         while content is None:
-            proxy_ip = self.get_proxy_ip() if self.use_proxy else None
+            proxy_ip = self.get_proxy_ip(
+                is_main_thread) if self.use_proxy else None
             response = self.send_request(
                 url, self.__headers, request_data, proxy_ip)
             content = self.check_content(response, proxy_ip)
@@ -225,6 +228,7 @@ class CommentSpider(object):
         """
         total_comment = self.request_comment(song_id, retry=True)
         total = total_comment.comment_total
+        print total
         data_dict = self.get_request_data_dict(total)
         comment_dict = {}
         param_list = []

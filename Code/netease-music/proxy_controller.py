@@ -226,7 +226,7 @@ class ProxyController(object):
             params_list = (str_available_time, count, 0,)
         result_set = self.__db_controller.sql_read(
             sql, params_list, is_main_thread)
-        if (result_set is None or len(result_set) < self.__db_min_available) and not self.__crawl_thread_running:
+        if (not result_set or len(result_set) < self.__db_min_available) and not self.__crawl_thread_running:
             crawl_thread = threading.Thread(target=self.crawl_proxy_ip)
             crawl_thread.setName('proxy-spider')
             print 'Crawl proxy start'
