@@ -17,7 +17,7 @@ class ConnectionPool(object):
     For control mysql connection.
     """
 
-    def __init__(self, user, password, database, host='127.0.0.1', port=3306, max_connection=10):
+    def __init__(self, user, password, database, host=None, port=None, max_connection=10):
         self.user = user
         self.password = password
         self.database = database
@@ -31,6 +31,9 @@ class ConnectionPool(object):
         self.connection_busy = 0
         self.retry_time = 3
         self.pool_dispose = False
+        check_thread = threading.Thread(target=self.check_connection_thread)
+        check_thread.setName('connection_checker')
+        check_thread.start()
 
     def check_connection_thread(self):
         """
@@ -105,11 +108,11 @@ class PoolController(MysqlController):
     def __init__(self, pool):
         self.pool = pool
         MysqlController.__init__(
-            pool.user, pool.password, pool.database, pool.host, pool.port)
+            self, pool.user, pool.password, pool.database, pool.host, pool.port)
         self.reference_count = 0
 
-    def connect(self):
-        pass
+    # def connect(self):
+    #     pass
 
     def check_available(self):
         """
@@ -140,3 +143,14 @@ class PoolController(MysqlController):
         Close connection
         """
         super(PoolController, self).close()
+
+
+if __name__ == '__main__':
+    pool = ConnectionPool('username', 'password', 'database_name')
+    # pool = ConnectionPool(
+    #     'username', 'password', 'database_name', 'host', 'port')
+    sql = 'select * from table'
+    # while True:
+    #     pass
+    controller = pool.get_connection()
+    result = controller.sql_read(sql)
