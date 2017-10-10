@@ -7,10 +7,11 @@ import random
 import time
 from datetime import datetime, timedelta
 import urllib2
+
+from multiprocessing import Process
 import threading
 import threadpool
 
-from multiprocessing import Process
 from sqlite_controller import SqliteController
 from proxy_ip import ProxyIP, ProxyIPSet
 from proxy_spider import ProxySpider
