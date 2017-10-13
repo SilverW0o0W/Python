@@ -13,7 +13,9 @@ import logging.config
 from multiprocessing import Process
 import threading
 
-# import cloghandler
+import cloghandler
+import yaml
+
 import threadpool
 
 from sqlite_controller import SqliteController
@@ -67,7 +69,7 @@ class ProxyController(object):
     __db_min_available = 10
 
     def __init__(self):
-        self.initialize_log()
+        self.initialize_logging()
         self.db_controller = SqliteController(
             self.__sql_create_table, self. __db_path)
         self.db_controller.init_db()
@@ -90,31 +92,32 @@ class ProxyController(object):
                 instance_lock.release()
         return cls.__instance
 
-    def initialize_log(self):
+    def initialize_logging(self):
         """
         Config logging parameters
         """
-        config = {
-            'version': 1,
-            'handlers': {
-                'file': {
-                    'level': 'DEBUG',
-                    'class': 'cloghandler.ConcurrentRotatingFileHandler',
-                    'maxBytes': 1024 * 1024 * 10,
-                    'backupCount': 50,
-                    # If delay is true,
-                    # then file opening is deferred until the first call to emit().
-                    'delay': True,
-                    'filename': 'logs/proxy_controller.log'
-                    # 'formatter': 'verbose'
-                }
-            },
-        }
+        # config = {
+        #     'version': 1,
+        #     'handlers': {
+        #         'file': {
+        #             'level': 'DEBUG',
+        #             'class': 'cloghandler.ConcurrentRotatingFileHandler',
+        #             'maxBytes': 1024 * 1024 * 10,
+        #             'backupCount': 50,
+        #             # If delay is true,
+        #             # then file opening is deferred until the first call to emit().
+        #             'delay': True,
+        #             'filename': 'logs/proxy_controller.log'
+        #             # 'formatter': 'verbose'
+        #         }
+        #     }
+        # }
+        file = open("logging-config.yaml")
+        config = yaml.load(file)
+        file.close()
         logging.config.dictConfig(config)
-        logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                            datefmt='%d %b %Y %H:%M:%S',
-                            filemode='w')
-        logging.debug('test')
+        log = logging.getLogger("root")
+        log.info('test')
 
     def send_check_request(self, opener, url):
         """
