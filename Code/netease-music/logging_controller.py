@@ -22,9 +22,9 @@ class LoggingController(object):
     Wrapper logging instance.
     """
 
-    def __init__(self, type, config_value, logger_name=None):
-        self.type = type
-        logging.config.dictConfig(config_value)
+    def __init__(self, config=None, logger_name=None):
+        if config:
+            logging.config.dictConfig(config)
         self.pipe = Pipe(duplex=False)
         self.logger_name = logger_name
         log_process = Process(target=self._logger_process,
@@ -87,3 +87,10 @@ class LoggingController(object):
         """
         Logger level
         """
+        message = [level, msg, args, kwargs]
+        self.pipe[1].send()
+
+
+if __name__ == '__main__':
+    logger = LoggingController()
+    logger.debug('test')
