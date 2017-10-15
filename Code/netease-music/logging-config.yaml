@@ -5,25 +5,28 @@ formatters:
         format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 handlers:
+    file:
+        class: cloghandler.ConcurrentRotatingFileHandler
+        level: DEBUG
+        formatter: simple
+        filename: proxy_controller.log
+
     console:
         class: logging.StreamHandler
         level: DEBUG
         formatter: simple
         stream: ext://sys.stdout
-    file:
-        level: DEBUG
-        class: cloghandler.ConcurrentRotatingFileHandler
-        formatter: simple
-        filename: proxy_controller.log
 
 loggers:
+    root:
+        level: DEBUG
+        handlers: [file]
+        propagate: no
+
     simpleExample:
         level: DEBUG
         handlers: [console]
         propagate: no
 
-    root:
-        level: DEBUG
-        handlers: [file]
-        propagate: no
+
 
