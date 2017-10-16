@@ -5,7 +5,7 @@ This file for controlling multi-process logging
 from multiprocessing import Process, Pipe
 import logging
 import logging.config
-import cloghandler
+# import cloghandler
 
 CRITICAL = 50
 FATAL = CRITICAL
@@ -32,13 +32,19 @@ class LoggingController(object):
         log_process.start()
 
     def _logger_process(self, pipe, logger_name):
+        logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                            datefmt='%d %b %Y %H:%M:%S',
+                            filemode='a',
+                            filename='log.log')
         logger = logging.getLogger(
             logger_name) if logger_name else logging.getLogger()
-        self._print_log(logger, pipe)
-
-    def _print_log(self, logger, pipe):
         while True:
-            key_value = pipe.recv()
+            message = pipe.recv()
+            if not message:
+                break
+            logger.log(message[0], message[1])
+
+    # def _print_log(self, logger, pipe):
 
     def setLevel(self, level):
         """
@@ -87,10 +93,13 @@ class LoggingController(object):
         """
         Logger level
         """
-        message = [level, msg, args, kwargs]
-        self.pipe[1].send()
+        msg = msg.format(args, kwargs)
+        message = [level, msg]
+        self.pipe[1].send(message)
 
 
 if __name__ == '__main__':
     logger = LoggingController()
-    logger.debug('test')
+    logger.error('test')
+    while True:
+        pass
