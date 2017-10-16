@@ -23,19 +23,21 @@ class LoggingController(object):
     """
 
     def __init__(self, config=None, logger_name=None):
-        if config:
-            logging.config.dictConfig(config)
+        self.config = config
         self.pipe = Pipe(duplex=False)
         self.logger_name = logger_name
         log_process = Process(target=self._logger_process,
-                              args=(self.pipe[0], self.logger_name,))
+                              args=(self.pipe[0], self.config, self.logger_name,))
         log_process.start()
 
-    def _logger_process(self, pipe, logger_name):
-        logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
-                            datefmt='%d %b %Y %H:%M:%S',
-                            filemode='a',
-                            filename='log.log')
+    def _logger_process(self, pipe, config, logger_name):
+        if config:
+            logging.config.dictConfig(config)
+        else:
+            logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+                                datefmt='%d %b %Y %H:%M:%S',
+                                filemode='a',
+                                filename='log.log')
         logger = logging.getLogger(
             logger_name) if logger_name else logging.getLogger()
         while True:
