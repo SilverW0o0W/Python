@@ -2,10 +2,10 @@
 This file for controlling multi-process logging 
 """
 
+import threading
 from multiprocessing import Process, Pipe
 import logging
 import logging.config
-# import cloghandler
 
 CRITICAL = 50
 FATAL = CRITICAL
@@ -15,6 +15,8 @@ WARN = WARNING
 INFO = 20
 DEBUG = 10
 NOTSET = 0
+
+LOCK = threading.Lock()
 
 
 class LoggingController(object):
@@ -95,13 +97,15 @@ class LoggingController(object):
         """
         Logger level
         """
-        msg = msg.format(args, kwargs)
+        msg = msg.format(*args, **kwargs)
         message = [level, msg]
+        LOCK.acquire()
         self.pipe[1].send(message)
+        LOCK.release()
 
 
 if __name__ == '__main__':
     logger = LoggingController()
-    logger.error('test')
+    logger.error('test {0}', '1')
     while True:
         pass

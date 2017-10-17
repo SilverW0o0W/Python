@@ -7,14 +7,18 @@ import random
 import time
 from datetime import datetime, timedelta
 import urllib2
+
+from logging_controller import LoggingController
+from multiprocessing import Process
 import threading
+
 import threadpool
 
 from sqlite_controller import SqliteController
 from proxy_ip import ProxyIP, ProxyIPSet
 from proxy_spider import ProxySpider
 
-instance_lock = threading.Lock()
+LOCK = threading.Lock()
 
 
 class ProxyController(object):
@@ -56,30 +60,37 @@ class ProxyController(object):
     __sql_select_available_count = 'select count(*) from proxy_ip where available = 1'
 
     __db_path = 'proxy_ip.db'
-    __db_controller = SqliteController(__sql_create_table, __db_path)
+
     __db_min_storage = 20
     __db_min_available = 10
 
     def __init__(self):
-        self.__db_controller.init_db()
-        check_thread = threading.Thread(target=self.check_db_storage_thread)
-        check_thread.setName('storage_count_checker')
-        check_thread.start()
-        verify_thread = threading.Thread(target=self.verify_db_storage_thread)
-        verify_thread.setName('storage_available_checker')
-        verify_thread.start()
+        self.logger = self.initialize_logging()
+        self.db_controller = SqliteController(
+            self.__sql_create_table, self. __db_path)
+        self.db_controller.init_db()
+        check_process = Process(target=self.check_db_storage_process)
+        check_process.start()
+        verify_process = Process(target=self.verify_db_storage_process)
+        verify_process.start()
 
     def __new__(cls, *args, **kwargs):
         if not cls.__instance:
             try:
-                instance_lock.acquire()
+                LOCK.acquire()
                 # double check
                 if not cls.__instance:
                     cls.__instance = super(ProxyController, cls).__new__(
                         cls, *args, **kwargs)
             finally:
-                instance_lock.release()
+                LOCK.release()
         return cls.__instance
+
+    def initialize_logging(self):
+        """
+        Config logging parameters
+        """
+        return LoggingController()
 
     def send_check_request(self, opener, url):
         """
@@ -136,7 +147,6 @@ class ProxyController(object):
             self.add_proxy_list_thread, proxy_ip_split_list)
         [pool.putRequest(request) for request in requests]
         pool.wait()
-        print 'add proxy done'
 
     def add_proxy_list_thread(self, proxy_ip_list):
         """
@@ -167,7 +177,7 @@ class ProxyController(object):
         sql = self.__sql_insert
         params_list = (proxy_ip.ip, proxy_ip.port,
                        1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
-        return self.__db_controller.sql_write(sql, params_list, is_main_thread)
+        return self.db_controller.sql_write(sql, params_list, is_main_thread)
 
     def insert_proxy_list_db(self, proxy_ip_list, is_main_thread=True):
         """
@@ -179,7 +189,7 @@ class ProxyController(object):
             ip_params = (proxy_ip.ip, proxy_ip.port,
                          1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
             ip_params_list.append(ip_params)
-        return self.__db_controller.sql_write_list(sql, ip_params_list, is_main_thread)
+        return self.db_controller.sql_write_list(sql, ip_params_list, is_main_thread)
 
     def delete_proxy_db(self, proxy_ip, is_main_thread=True):
         """
@@ -188,7 +198,7 @@ class ProxyController(object):
         sql = self.__sql_delete
         params_list = []
         params_list.append(proxy_ip.db_id)
-        return self.__db_controller.sql_write(sql, params_list, is_main_thread)
+        return self.db_controller.sql_write(sql, params_list, is_main_thread)
 
     def update_proxy_db(self, proxy_ip, is_main_thread=True):
         """
@@ -197,7 +207,7 @@ class ProxyController(object):
         sql = self.__sql_update
         params_list = (proxy_ip.ip, proxy_ip.port, 1 if proxy_ip.is_https else 0,
                        1 if proxy_ip.available else 0, proxy_ip.verify_time, proxy_ip.db_id)
-        return self.__db_controller.sql_write(sql, params_list, is_main_thread)
+        return self.db_controller.sql_write(sql, params_list, is_main_thread)
 
     def convert_db_proxy_to_proxy_ip(self, ip_value_list):
         """
@@ -224,7 +234,7 @@ class ProxyController(object):
         else:
             sql = self.__sql_select_available_limit
             params_list = (str_available_time, count, 0,)
-        result_set = self.__db_controller.sql_read(
+        result_set = self.db_controller.sql_read(
             sql, params_list, is_main_thread)
         if (not result_set or len(result_set) < self.__db_min_available) and not self.__crawl_thread_running:
             crawl_thread = threading.Thread(target=self.crawl_proxy_ip)
@@ -241,14 +251,14 @@ class ProxyController(object):
         """
         Get total record in db.
         """
-        result_set = self.__db_controller.sql_read(
+        result_set = self.db_controller.sql_read(
             self.__sql_select_available_count, None, is_main_thread)
         if result_set is not None and len(result_set) > 0 and len(result_set[0]) > 0:
             return result_set[0][0]
         else:
             return -1
 
-    def check_db_storage_thread(self):
+    def check_db_storage_process(self):
         """
         Check db storage status
         """
@@ -265,7 +275,6 @@ class ProxyController(object):
                     if not self.__crawl_thread_running:
                         crawl_thread = threading.Thread(
                             target=self.crawl_proxy_ip)
-                        print 'Crawl proxy start'
                         crawl_thread.setName('crawl-spider')
                         crawl_thread.start()
             time.sleep(self.__crawl_check_seconds)
@@ -275,7 +284,7 @@ class ProxyController(object):
         Check proxy existed in sqlite
         """
         params_list = (proxy_ip.ip, proxy_ip.port,)
-        result_set = self.__db_controller.sql_read(
+        result_set = self.db_controller.sql_read(
             self.__sql_select_exist, params_list, False)
         return result_set is not None and len(result_set) > 0
 
@@ -283,6 +292,7 @@ class ProxyController(object):
         """
         Run the proxy spider to crawl new proxy ip
         """
+        logging.info('Crawl proxy start')
         self.__crawl_thread_running = True
         try:
             proxy_ip_list = self.__proxy_spider.get_proxy_ip(
@@ -290,6 +300,7 @@ class ProxyController(object):
             self.add_proxy_list(proxy_ip_list)
         finally:
             self.__crawl_thread_running = False
+            logging.info('Crawl proxy done')
 
     def select_need_check_proxy_list(self, is_main_thread=True):
         """
@@ -300,7 +311,7 @@ class ProxyController(object):
         str_verify_time = verify_time.strftime('%Y-%m-%d %H:%M:%S')
         params_list = []
         params_list.append(str_verify_time)
-        result_set = self.__db_controller.sql_read(
+        result_set = self.db_controller.sql_read(
             self.__sql_select_verify, params_list, is_main_thread)
         if result_set is None:
             result_set = []
@@ -310,7 +321,7 @@ class ProxyController(object):
             proxy_ip_list.append(proxy_ip)
         return proxy_ip_list
 
-    def verify_db_storage_thread(self):
+    def verify_db_storage_process(self):
         """
         Check proxy in db is still available
         """
@@ -329,7 +340,7 @@ class ProxyController(object):
         Check single proxy ip and delete inavaildable ip.
         """
         self.__verify_thread_running = True
-        print 'verify proxy start'
+        logging.info('Verify proxy start')
         try:
             ip_value_list = self.select_need_check_proxy_list(False)
             proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
@@ -338,7 +349,7 @@ class ProxyController(object):
             print error.message
         finally:
             self.__verify_thread_running = False
-            print 'verify proxy done'
+            logging.info('Verify proxy done')
 
     def verify_proxy_ip_list(self, proxy_ip_list):
         """
@@ -373,7 +384,7 @@ class ProxyController(object):
         Release resource.
         """
         self.__watcher_thread_stop = True
-        self.__db_controller.dispose_db_connection()
+        self.db_controller.dispose_db_connection()
 
 
 if __name__ == '__main__':
