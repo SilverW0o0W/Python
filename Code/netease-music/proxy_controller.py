@@ -292,7 +292,7 @@ class ProxyController(object):
         """
         Run the proxy spider to crawl new proxy ip
         """
-        logging.info('Crawl proxy start')
+        self.logger.info('Crawl proxy start')
         self.__crawl_thread_running = True
         try:
             proxy_ip_list = self.__proxy_spider.get_proxy_ip(
@@ -300,7 +300,7 @@ class ProxyController(object):
             self.add_proxy_list(proxy_ip_list)
         finally:
             self.__crawl_thread_running = False
-            logging.info('Crawl proxy done')
+            self.logger.info('Crawl proxy done')
 
     def select_need_check_proxy_list(self, is_main_thread=True):
         """
@@ -340,7 +340,7 @@ class ProxyController(object):
         Check single proxy ip and delete inavaildable ip.
         """
         self.__verify_thread_running = True
-        logging.info('Verify proxy start')
+        self.logger.info('Verify proxy start')
         try:
             ip_value_list = self.select_need_check_proxy_list(False)
             proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
@@ -349,7 +349,7 @@ class ProxyController(object):
             print error.message
         finally:
             self.__verify_thread_running = False
-            logging.info('Verify proxy done')
+            self.logger.info('Verify proxy done')
 
     def verify_proxy_ip_list(self, proxy_ip_list):
         """
