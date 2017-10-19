@@ -6,6 +6,7 @@ This is for crawling proxy ip from ip website.
 from datetime import datetime, timedelta
 
 import urllib2
+from logging_controller import LoggingController
 from bs4 import BeautifulSoup
 from proxy_ip import ProxyIP
 
@@ -18,10 +19,11 @@ class ProxySpider(object):
     __header = {}
     __header['User-Agent'] = __user_agent
 
-    def __init__(self):
+    def __init__(self, logger):
         self.last_page = 0
         self.last_crawl_time = None
         self.refresh_minutes = 10
+        self.logger = logger
 
     def get_page_number(self, page_count):
         """
@@ -60,6 +62,6 @@ class ProxySpider(object):
                     if need_https == ip_temp.is_https:
                         proxy_ip_list.append(ip_temp)
             except StandardError, error:
-                print error.message
+                self.logger.warn(error.message)
                 continue
         return proxy_ip_list

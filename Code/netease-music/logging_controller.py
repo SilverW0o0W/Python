@@ -39,7 +39,8 @@ class LoggingController(object):
             logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
                                 datefmt='%d %b %Y %H:%M:%S',
                                 filemode='a',
-                                filename='log.log')
+                                filename='log.log',
+                                level='DEBUG')
         logger = logging.getLogger(
             logger_name) if logger_name else logging.getLogger()
         while True:
@@ -101,6 +102,14 @@ class LoggingController(object):
         message = [level, msg]
         LOCK.acquire()
         self.pipe[1].send(message)
+        LOCK.release()
+
+    def close(self):
+        """
+        Send close message to log process.
+        """
+        LOCK.acquire()
+        self.pipe[1].send(None)
         LOCK.release()
 
 

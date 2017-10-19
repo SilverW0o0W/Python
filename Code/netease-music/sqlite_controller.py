@@ -15,6 +15,7 @@ class SqliteController(object):
     def __init__(self, sql_create_table, db_path):
         self.sql_create_table = sql_create_table
         self.db_path = db_path
+        self.db_connection = None
         self.init_db(sql_create_table)
 
     def init_db(self, sql_create_table=None):
