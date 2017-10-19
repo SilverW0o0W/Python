@@ -62,9 +62,6 @@ class ProxyController(object):
     __db_min_storage = 20
     __db_min_available = 10
 
-    check_process = None
-    verify_process = None
-
     def __init__(self):
         self.logger = self.initialize_logging()
         self.proxy_spider = ProxySpider(self.logger)
@@ -370,9 +367,9 @@ class ProxyController(object):
         Release resource.
         """
         self.watcher_process_stop = True
+        # self.check_process.join()
+        # self.verify_process.join()
         self.db_controller.dispose_db_connection()
-        check_process.join()
-        verify_process.join()
         self.logger.close()
 
 
@@ -382,7 +379,7 @@ if __name__ == '__main__':
 # print id(controller)
 # print id(controller2)
 # ip_set = controller.get_proxy()
-    time.sleep(15)
+    time.sleep(120)
     controller.close()
     while True:
         time.sleep(30)
