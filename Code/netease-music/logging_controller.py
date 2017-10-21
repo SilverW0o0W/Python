@@ -28,6 +28,7 @@ class LoggingController(object):
         self.config = config
         self.pipe = Pipe(duplex=False)
         self.logger_name = logger_name
+        self.is_run = True
         log_process = Process(target=self._logger_process,
                               args=(self.pipe[0], self.config, self.logger_name,))
         log_process.start()
@@ -98,18 +99,29 @@ class LoggingController(object):
         """
         Logger level
         """
+        if not self.is_run:
+            return
         msg = msg.format(*args, **kwargs)
         message = [level, msg]
-        LOCK.acquire()
-        self.pipe[1].send(message)
-        LOCK.release()
+        self.send_message(message)
 
     def close(self):
         """
         Send close message to log process.
         """
         LOCK.acquire()
-        self.pipe[1].send(None)
+        if self.is_run:
+            self.pipe[1].send(None)
+        self.is_run = False
+        LOCK.release()
+
+    def send_message(self, message):
+        """
+        Send message to pipe
+        """
+        LOCK.acquire()
+        if self.is_run:
+            self.pipe[1].send(message)
         LOCK.release()
 
 
