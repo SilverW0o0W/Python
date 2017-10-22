@@ -3,6 +3,7 @@
 This is for controlling proxy ip
 """
 
+import os
 import random
 import time
 from datetime import datetime, timedelta
@@ -35,11 +36,11 @@ class ProxyController(object):
     __thread_list_split = 3
     __thread_result = threading.local()
 
-    __crawl_thread_running = False
+    __process_stop_file = 'process.stop'
+
     __crawl_check_seconds = 30
     __crawl_pool_max = 20
 
-    __verify_thread_running = False
     __verify_check_seconds = 300
     __verify_proxy_minutes = 5
     __verify_pool_max = 30
@@ -63,12 +64,11 @@ class ProxyController(object):
     __db_min_available = 10
 
     def __init__(self):
-        self.logger = self.initialize_logging()
+        self.logger = LoggingController()
         self.proxy_spider = ProxySpider(self.logger)
         self.db_controller = SqliteController(
             self.__sql_create_table, self. __db_path)
         self.db_controller.init_db()
-        self.watcher_process_stop = False
         check_process = Process(
             target=self.check_db_storage_process)
         check_process.start()
@@ -87,12 +87,6 @@ class ProxyController(object):
             finally:
                 LOCK.release()
         return cls.__instance
-
-    def initialize_logging(self):
-        """
-        Config logging parameters
-        """
-        return LoggingController()
 
     def send_check_request(self, opener, url):
         """
@@ -261,7 +255,7 @@ class ProxyController(object):
         Check db storage status
         """
         while True:
-            if self.watcher_process_stop:
+            if self.check_process_stop():
                 self.logger.info('crawl process close')
                 break
             count = self.get_db_count(False)
@@ -314,7 +308,7 @@ class ProxyController(object):
         Check proxy in db is still available
         """
         while True:
-            if self.watcher_process_stop:
+            if self.check_process_stop():
                 self.logger.info('verify process close')
                 break
             self.verify_proxy()
@@ -362,13 +356,19 @@ class ProxyController(object):
         proxy_ip.available = 0
         self.update_proxy_db(proxy_ip, is_main_thread)
 
+    def check_process_stop(self):
+        """
+        Check stop file exist
+        """
+        return os.path.exists(self.__process_stop_file)
+
     def close(self):
         """
         Release resource.
         """
-        self.watcher_process_stop = True
-        # self.check_process.join()
-        # self.verify_process.join()
+        stop_file = open(self.__process_stop_file, "w")
+        stop_file.close()
+        time.sleep(30)
         self.db_controller.dispose_db_connection()
         self.logger.close()
 

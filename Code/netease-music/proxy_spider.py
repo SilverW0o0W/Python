@@ -61,6 +61,7 @@ class ProxySpider(object):
                     # print ip_temp.ip + '\t' + ip_temp.port + '\t' + str(ip_temp.is_https)
                     if need_https == ip_temp.is_https:
                         proxy_ip_list.append(ip_temp)
+                self.logger.debug('Crawl ip count: %s' % len(proxy_ip_list))
             except StandardError, error:
                 self.logger.warn(error.message)
                 continue
