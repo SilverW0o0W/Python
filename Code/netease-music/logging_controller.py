@@ -50,8 +50,6 @@ class LoggingController(object):
                 break
             logger.log(message[0], message[1])
 
-    # def _print_log(self, logger, pipe):
-
     def setLevel(self, level):
         """
         Set the logging level of this logger.

@@ -31,10 +31,8 @@ class ProxyController(object):
     __check_http_url = 'http://silvercodingcat.com/python/2017/08/09/Proxy-Spider-Check/'
     __check_https_url = ''
     __check_retry_time = 3
-    __check_fake_proxy = True
     __thread_timeout = 15
     __thread_list_split = 3
-    __thread_result = threading.local()
 
     __process_stop_file = 'process.stop'
 
@@ -60,8 +58,8 @@ class ProxyController(object):
 
     __db_path = 'proxy_ip.db'
 
-    __db_min_storage = 20
-    __db_min_available = 10
+    __min_storage = 20
+    __min_available = 10
 
     def __init__(self):
         self.logger = LoggingController()
@@ -70,10 +68,10 @@ class ProxyController(object):
             self.__sql_create_table, self. __db_path)
         self.db_controller.init_db()
         check_process = Process(
-            target=self.check_db_storage_process)
+            target=self.check_storage_process)
         check_process.start()
         verify_process = Process(
-            target=self.verify_db_storage_process)
+            target=self.verify_storage_process)
         verify_process.start()
 
     def __new__(cls, *args, **kwargs):
@@ -231,7 +229,7 @@ class ProxyController(object):
             params_list = (str_available_time, count, 0,)
         result_set = self.db_controller.sql_read(
             sql, params_list, is_main_thread)
-        if (not result_set or len(result_set) < self.__db_min_available):
+        if (not result_set or len(result_set) < self.__min_available):
             pass
         proxy_ip_list = []
         for result in result_set:
@@ -250,7 +248,7 @@ class ProxyController(object):
         else:
             return -1
 
-    def check_db_storage_process(self):
+    def check_storage_process(self):
         """
         Check db storage status
         """
@@ -259,7 +257,7 @@ class ProxyController(object):
                 self.logger.info('crawl process close')
                 break
             count = self.get_db_count(False)
-            if count < self.__db_min_storage:
+            if count < self.__min_storage:
                 self.crawl_proxy_ip()
             time.sleep(self.__crawl_check_seconds)
 
@@ -303,7 +301,7 @@ class ProxyController(object):
             proxy_ip_list.append(proxy_ip)
         return proxy_ip_list
 
-    def verify_db_storage_process(self):
+    def verify_storage_process(self):
         """
         Check proxy in db is still available
         """
