@@ -67,6 +67,7 @@ class ProxyController(object):
         self.db_controller = SqliteController(
             self.__sql_create_table, self. __db_path)
         self.db_controller.init_db()
+        self.clear_stop_file()
         check_process = Process(
             target=self.check_storage_process)
         check_process.start()
@@ -353,6 +354,16 @@ class ProxyController(object):
         """
         proxy_ip.available = 0
         self.update_proxy_db(proxy_ip, is_main_thread)
+
+    def clear_stop_file(self):
+        """
+        Delete stop file
+        """
+        if self.check_process_stop():
+            try:
+                os.remove(self.__process_stop_file)
+            except Exception, ex:
+                self.logger.warning('Delete stop file failed.')
 
     def check_process_stop(self):
         """
