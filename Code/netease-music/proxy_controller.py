@@ -377,7 +377,7 @@ class ProxyController(object):
         """
         stop_file = open(self.__process_stop_file, "w")
         stop_file.close()
-        time.sleep(30)
+        # Need wait process stop!!!
         self.db_controller.dispose_db_connection()
         self.logger.close()
 
