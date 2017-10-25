@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 This file for controlling multi-process logging 
 """

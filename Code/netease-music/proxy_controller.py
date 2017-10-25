@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import urllib2
 
 import threading
-from multiprocessing import Process
+from multiprocessing import Process, Pipe
 from logging_controller import LoggingController
 
 import threadpool
@@ -68,6 +68,7 @@ class ProxyController(object):
             self.__sql_create_table, self. __db_path)
         self.db_controller.init_db()
         self.clear_stop_file()
+        self.pipe = Pipe(duplex=False)
         check_process = Process(
             target=self.check_storage_process)
         check_process.start()
@@ -253,14 +254,14 @@ class ProxyController(object):
         """
         Check db storage status
         """
-        while True:
-            if self.check_process_stop():
-                self.logger.info('crawl process close')
-                break
+        while self.should_run():
             count = self.get_db_count(False)
             if count < self.__min_storage:
                 self.crawl_proxy_ip()
-            time.sleep(self.__crawl_check_seconds)
+            else:
+                time.sleep(self.__crawl_check_seconds)
+        self.logger.info('Crawl process close')
+        self.pipe[1].send(0)
 
     def check_proxy_exist(self, proxy_ip):
         """
@@ -279,7 +280,8 @@ class ProxyController(object):
         try:
             proxy_ip_list = self.proxy_spider.get_proxy_ip(
                 False, self.__proxy_spider_page)
-            self.add_proxy_list(proxy_ip_list)
+            if self.should_run():
+                self.add_proxy_list(proxy_ip_list)
         finally:
             self.logger.info('Crawl proxy done')
 
@@ -306,12 +308,14 @@ class ProxyController(object):
         """
         Check proxy in db is still available
         """
-        while True:
-            if self.check_process_stop():
-                self.logger.info('verify process close')
-                break
+        while self.should_run():
             self.verify_proxy()
-            time.sleep(self.__verify_check_seconds)
+            for i in range(self.__verify_check_seconds / 10):
+                if not self.should_run:
+                    break
+                time.sleep(10)
+        self.logger.info('Verify process close')
+        self.pipe[1].send(1)
 
     def verify_proxy(self):
         """
@@ -321,7 +325,8 @@ class ProxyController(object):
         try:
             ip_value_list = self.select_need_check_proxy_list(False)
             proxy_ip_list = self.convert_db_proxy_to_proxy_ip(ip_value_list)
-            self.verify_proxy_ip_list(proxy_ip_list)
+            if self.should_run():
+                self.verify_proxy_ip_list(proxy_ip_list)
         except StandardError, error:
             print error.message
         finally:
@@ -359,13 +364,19 @@ class ProxyController(object):
         """
         Delete stop file
         """
-        if self.check_process_stop():
+        if self.check_process_stop_file():
             try:
                 os.remove(self.__process_stop_file)
             except Exception, ex:
-                self.logger.warning('Delete stop file failed.')
+                self.logger.warning('Delete stop file failed. Reason: {0}', ex)
 
-    def check_process_stop(self):
+    def should_run(self):
+        """
+        Process should be running
+        """
+        return not self.check_process_stop_file()
+
+    def check_process_stop_file(self):
         """
         Check stop file exist
         """
@@ -377,7 +388,13 @@ class ProxyController(object):
         """
         stop_file = open(self.__process_stop_file, "w")
         stop_file.close()
-        # Need wait process stop!!!
+        for i in range(2):
+            message = self.pipe[0].recv()
+            if message == 0:
+                self.logger.debug("Recieve crawl process stop.")
+            elif message == 1:
+                self.logger.debug("Recieve verify process stop.")
+        self.clear_stop_file()
         self.db_controller.dispose_db_connection()
         self.logger.close()
 
@@ -390,8 +407,8 @@ if __name__ == '__main__':
 # ip_set = controller.get_proxy()
     time.sleep(120)
     controller.close()
-    while True:
-        time.sleep(30)
+    # while True:
+    #     time.sleep(30)
 # ip_list = controller.get_proxy()
 # for ip in ip_list:
 #     print ip.ip + '\t' + ip.port
