@@ -401,14 +401,8 @@ class ProxyController(object):
 
 if __name__ == '__main__':
     controller = ProxyController()
-# controller2 = ProxyController()
-# print id(controller)
-# print id(controller2)
 # ip_set = controller.get_proxy()
     time.sleep(120)
     controller.close()
-    # while True:
-    #     time.sleep(30)
-# ip_list = controller.get_proxy()
-# for ip in ip_list:
-#     print ip.ip + '\t' + ip.port
+    while True:
+        time.sleep(30)
