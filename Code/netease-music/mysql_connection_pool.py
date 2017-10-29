@@ -77,7 +77,7 @@ class ConnectionPool(object):
                 if self.queue_available.qsize() > 0:
                     connection = self.queue_available.get()
                     break
-                time.sleep(3)
+                time.sleep(1)
             finally:
                 connection_lock.release()
         if not connection:
