@@ -47,11 +47,12 @@ class CommentDetail(object):
     For single comment
     """
 
-    def __init_(self, song_id, comment_id, is_replied, content, user_id, time, liked_count):
+    def __init__(self, song_id, comment):
         self.song_id = song_id
-        self.comment_id = comment_id
-        self.is_replied = is_replied
-        self.content = content
-        self.user_id = user_id
-        self.time = time
-        self.liked_count = liked_count
+        self.comment_id = comment['commentId'] if 'commentId' in comment else None
+        self.is_replied = comment['beReplied'] if 'beReplied'in comment else None
+        self.content = comment['content'] if 'content' in comment else None
+        self.time = comment['time'] if 'time' in comment else None
+        self.liked_count = comment['likedCount'] if 'likedCount' in comment else None
+        user = comment['user'] if 'user' in comment else None
+        self.user_id = user['userId'] if 'userId' in user else None
