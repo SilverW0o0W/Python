@@ -40,3 +40,18 @@ class SongHotComment(SongBase):
         self.comment_total = 0
         self.hot_comments = None
         self.hot_comment_more = False
+
+
+class CommentDetail(object):
+    """
+    For single comment
+    """
+
+    def __init_(self, song_id, comment_id, is_replied, content, user_id, time, liked_count):
+        self.song_id = song_id
+        self.comment_id = comment_id
+        self.is_replied = is_replied
+        self.content = content
+        self.user_id = user_id
+        self.time = time
+        self.liked_count = liked_count
