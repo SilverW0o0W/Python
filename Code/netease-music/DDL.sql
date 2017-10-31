@@ -5,4 +5,4 @@ create table proxy_ip(id INTEGER primary key autoincrement, ip VARCHAR(20), port
 -- comment.db
 -- type: MySQL
 -- temp
-create table comment(id int primary key AUTO_INCREMENT, song_id varchar(20), user_id varchar(20), comment_id varchar(30), be_replied tinyint, content varchar(200), create_time timestamp(),liked_count int)
+create table comment(id int primary key AUTO_INCREMENT, song_id varchar(20), user_id varchar(20), comment_id varchar(30), be_replied tinyint, content varchar(200), create_time timestamp,liked_count int)

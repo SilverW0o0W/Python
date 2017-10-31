@@ -16,9 +16,19 @@ class CommentWriter(object):
         self.pipe = Pipe(duplex=False)
         self.flush_count = flush_count
 
+    def _writing_process(self, pipe, config, logger_name):
+        while True:
+            message = pipe.recv()
+            if not message:
+                break
+            pass
+
     def send(self, data):
         """
         Send data to input process
         """
-        if  isinstance(data,CommentDetail):
-            pass
+        if not data:
+            self.pipe[1].send(data)
+
+    def dispose(self):
+        self.pipe[1].send(None)
