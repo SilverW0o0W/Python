@@ -50,7 +50,7 @@ class CommentDetail(object):
     def __init__(self, song_id, comment):
         self.song_id = song_id
         self.comment_id = comment['commentId'] if 'commentId' in comment else None
-        self.is_replied = comment['beReplied'] if 'beReplied'in comment else None
+        self.be_replied = comment['beReplied'] if 'beReplied'in comment else None
         self.content = comment['content'] if 'content' in comment else None
         self.time = comment['time'] if 'time' in comment else None
         self.liked_count = comment['likedCount'] if 'likedCount' in comment else None
