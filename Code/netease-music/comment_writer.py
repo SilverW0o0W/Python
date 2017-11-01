@@ -3,9 +3,11 @@
 For write comment detail to DB
 """
 
-from music import CommentDetail
+import threading
 from multiprocessing import Process, Pipe
+from music import CommentDetail
 
+LOCK = threading.Lock()
 
 class CommentWriter(object):
     """
