@@ -382,7 +382,7 @@ class ProxyController(object):
         """
         return os.path.exists(self.__process_stop_file)
 
-    def close(self):
+    def dispose(self):
         """
         Release resource.
         """
@@ -396,13 +396,13 @@ class ProxyController(object):
                 self.logger.debug("Recieve verify process stop.")
         self.clear_stop_file()
         self.db_controller.dispose_db_connection()
-        self.logger.close()
+        self.logger.dispose()
 
 
 if __name__ == '__main__':
     controller = ProxyController()
 # ip_set = controller.get_proxy()
     time.sleep(120)
-    controller.close()
+    controller.dispose()
     while True:
         time.sleep(30)

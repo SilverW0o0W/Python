@@ -104,7 +104,7 @@ class LoggingController(object):
         message = [level, msg]
         self.send_message(message)
 
-    def close(self):
+    def dispose(self):
         """
         Send close message to log process.
         """
@@ -118,6 +118,8 @@ class LoggingController(object):
         """
         Send message to pipe
         """
+        if not self.is_run or not message:
+            return
         LOCK.acquire()
         if self.is_run:
             self.pipe[1].send(message)
