@@ -4,6 +4,7 @@ For write comment detail to DB
 """
 
 import threading
+from mysql_connection_pool import ConnectionPool
 from multiprocessing import Process, Pipe
 from music import CommentDetail
 
@@ -21,20 +22,27 @@ class CommentWriter(object):
         self.is_run = True
 
     def _writing_process(self, pipe):
+        conn_pool = ConnectionPool(user='', password='', database='')
         buffer_message = []
         buffer_count = 0
         while True:
             message = pipe.recv()
             if not message:
                 if buffer_count != 0:
-                    pass
+                    self.add_record(conn_pool.get_connection(), buffer_message)
+                    conn_pool.close()
                 break
             buffer_count += 1
             buffer_message.append(message)
             if buffer_count >= self.flush_count:
-                pass
-                buffer_message = []
+                self.add_record(conn_pool.get_connection(), buffer_message)
                 buffer_count = 0
+
+    def add_record(self, connecton, buffer_message):
+        """
+        Add data to DB
+        """
+        pass
 
     def send(self, data):
         """

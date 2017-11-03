@@ -29,7 +29,7 @@ class SqliteController(object):
             self.db_connection = self.establish_db_connection()
             if not db_exist:
                 # Create db table
-                return self.sql_write(sql_create_table)
+                return self.write(sql_create_table)
             return True
         except StandardError, error:
             print error.message
@@ -50,7 +50,7 @@ class SqliteController(object):
             self.db_connection.close()
             self.db_connection = None
 
-    def sql_write(self, sql, params_list=None, is_main_thread=True):
+    def write(self, sql, params_list=None, is_main_thread=True):
         """
         Execute sqlite sql. For write.
         """
@@ -77,7 +77,7 @@ class SqliteController(object):
             if is_main_thread is False and connect is not None:
                 connect.close()
 
-    def sql_write_list(self, sql, params_list, is_main_thread=True):
+    def write_list(self, sql, params_list, is_main_thread=True):
         """
         Execute sqlite sql. For write.
         """
@@ -107,7 +107,7 @@ class SqliteController(object):
             if is_main_thread is False and connect is not None:
                 connect.close()
 
-    def sql_read(self, sql, params_list=None, is_main_thread=True):
+    def read(self, sql, params_list=None, is_main_thread=True):
         """
         Execute sqlite sql. For read.
         """

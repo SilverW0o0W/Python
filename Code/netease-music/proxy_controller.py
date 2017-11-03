@@ -173,7 +173,7 @@ class ProxyController(object):
         sql = self.__sql_insert
         params_list = (proxy_ip.ip, proxy_ip.port,
                        1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
-        return self.db_controller.sql_write(sql, params_list, is_main_thread)
+        return self.db_controller.write(sql, params_list, is_main_thread)
 
     def insert_proxy_list_db(self, proxy_ip_list, is_main_thread=True):
         """
@@ -185,7 +185,7 @@ class ProxyController(object):
             ip_params = (proxy_ip.ip, proxy_ip.port,
                          1 if proxy_ip.is_https else 0, 1 if proxy_ip.available else 0)
             ip_params_list.append(ip_params)
-        return self.db_controller.sql_write_list(sql, ip_params_list, is_main_thread)
+        return self.db_controller.write_list(sql, ip_params_list, is_main_thread)
 
     def delete_proxy_db(self, proxy_ip, is_main_thread=True):
         """
@@ -194,7 +194,7 @@ class ProxyController(object):
         sql = self.__sql_delete
         params_list = []
         params_list.append(proxy_ip.db_id)
-        return self.db_controller.sql_write(sql, params_list, is_main_thread)
+        return self.db_controller.write(sql, params_list, is_main_thread)
 
     def update_proxy_db(self, proxy_ip, is_main_thread=True):
         """
@@ -203,7 +203,7 @@ class ProxyController(object):
         sql = self.__sql_update
         params_list = (proxy_ip.ip, proxy_ip.port, 1 if proxy_ip.is_https else 0,
                        1 if proxy_ip.available else 0, proxy_ip.verify_time, proxy_ip.db_id)
-        return self.db_controller.sql_write(sql, params_list, is_main_thread)
+        return self.db_controller.write(sql, params_list, is_main_thread)
 
     def convert_db_proxy_to_proxy_ip(self, ip_value_list):
         """
@@ -229,7 +229,7 @@ class ProxyController(object):
         else:
             sql = self.__sql_select_available_limit
             params_list = (str_available_time, count, 0,)
-        result_set = self.db_controller.sql_read(
+        result_set = self.db_controller.read(
             sql, params_list, is_main_thread)
         if (not result_set or len(result_set) < self.__min_available):
             pass
@@ -243,7 +243,7 @@ class ProxyController(object):
         """
         Get total record in db.
         """
-        result_set = self.db_controller.sql_read(
+        result_set = self.db_controller.read(
             self.__sql_select_available_count, None, is_main_thread)
         if result_set is not None and len(result_set) > 0 and len(result_set[0]) > 0:
             return result_set[0][0]
@@ -268,7 +268,7 @@ class ProxyController(object):
         Check proxy existed in sqlite
         """
         params_list = (proxy_ip.ip, proxy_ip.port,)
-        result_set = self.db_controller.sql_read(
+        result_set = self.db_controller.read(
             self.__sql_select_exist, params_list, False)
         return result_set is not None and len(result_set) > 0
 
@@ -294,7 +294,7 @@ class ProxyController(object):
         str_verify_time = verify_time.strftime('%Y-%m-%d %H:%M:%S')
         params_list = []
         params_list.append(str_verify_time)
-        result_set = self.db_controller.sql_read(
+        result_set = self.db_controller.read(
             self.__sql_select_verify, params_list, is_main_thread)
         if result_set is None:
             result_set = []

@@ -38,7 +38,7 @@ class MysqlController(object):
         if self.connection != None:
             self.connection.close()
 
-    def sql_write(self, sql, params_list=None):
+    def write(self, sql, params_list=None):
         """
         Execute sql. For write.
         """
@@ -57,7 +57,7 @@ class MysqlController(object):
             if cursor is not None:
                 cursor.close()
 
-    def sql_write_list(self, sql, params_list):
+    def write_list(self, sql, params_list):
         """
         Execute sql. For write.
         """
@@ -79,7 +79,7 @@ class MysqlController(object):
             if cursor is not None:
                 cursor.close()
 
-    def sql_read(self, sql, params_list=None):
+    def read(self, sql, params_list=None):
         """
         Execute sql. For read.
         """
@@ -104,4 +104,4 @@ if __name__ == '__main__':
     controller = MysqlController(
         'username', 'password', 'database_name', 'host', 'port')
     sql = 'select * from table'
-    result = controller.sql_read(sql)
+    result = controller.read(sql)
