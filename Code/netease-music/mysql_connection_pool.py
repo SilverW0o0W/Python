@@ -1,3 +1,4 @@
+# coding=utf-8
 """
 This file work for controlling mysql connection pool.
 """
@@ -9,7 +10,7 @@ import time
 import threading
 from mysql_controller import MysqlController
 
-connection_lock = threading.Lock()
+LOCK = threading.Lock()
 
 
 class ConnectionPool(object):
@@ -42,9 +43,9 @@ class ConnectionPool(object):
         while True:
             if self.pool_dispose:
                 break
-            connection_lock.acquire()
+            LOCK.acquire()
             count = self.queue_available.qsize() + self.connection_busy
-            connection_lock.release()
+            LOCK.release()
             if count != self.max_connection:
                 self.create_connection(self.max_connection - count)
             time.sleep(5)
@@ -61,10 +62,10 @@ class ConnectionPool(object):
         """
         Add connection to queue
         """
-        connection_lock.acquire()
+        LOCK.acquire()
         if not self.pool_dispose:
             self.queue_available.put(controller)
-        connection_lock.release()
+        LOCK.release()
 
     def get_connection(self):
         """
@@ -72,14 +73,14 @@ class ConnectionPool(object):
         """
         connection = None
         for i in range(self.retry_time):
-            connection_lock.acquire()
+            LOCK.acquire()
             try:
                 if self.queue_available.qsize() > 0:
                     connection = self.queue_available.get()
                     break
                 time.sleep(1)
             finally:
-                connection_lock.release()
+                LOCK.release()
         if not connection:
             # need more detail
             raise Exception()
@@ -90,14 +91,14 @@ class ConnectionPool(object):
         Close available connection.
         """
         self.pool_dispose = False
-        connection_lock.acquire()
+        LOCK.acquire()
         while self.queue_available.qsize > 0:
             try:
                 controller = self.queue_available.get()
                 controller.real_close()
             except BaseException, exception:
                 print exception.message
-        connection_lock.release()
+        LOCK.release()
 
 
 class PoolController(MysqlController):
@@ -134,9 +135,9 @@ class PoolController(MysqlController):
             self.pool.append_connection(self)
         else:
             self.real_close()
-        connection_lock.acquire()
+        LOCK.acquire()
         self.pool.connection_busy -= 1
-        connection_lock.release()
+        LOCK.release()
 
     def real_close(self):
         """

@@ -101,7 +101,7 @@ class MysqlController(object):
 
 if __name__ == '__main__':
     # controller = MysqlController('username', 'password', 'database_name')
-    controller = MysqlController(
+    main_controller = MysqlController(
         'username', 'password', 'database_name', 'host', 'port')
-    sql = 'select * from table'
-    result = controller.read(sql)
+    main_sql = 'select * from table'
+    main_result = main_controller.read(main_sql)

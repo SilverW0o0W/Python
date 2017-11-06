@@ -16,6 +16,8 @@ class CommentWriter(object):
     For writing comment to DB
     """
 
+    __sql_insert = 'insert into comment values(null, ?, ?, ?, ?, ?, ?, ?)'
+
     def __init__(self, flush_count=5):
         self.pipe = Pipe(duplex=False)
         self.flush_count = flush_count
@@ -23,26 +25,33 @@ class CommentWriter(object):
 
     def _writing_process(self, pipe):
         conn_pool = ConnectionPool(user='', password='', database='')
-        buffer_message = []
+        buffer_comments = []
         buffer_count = 0
         while True:
             message = pipe.recv()
             if not message:
                 if buffer_count != 0:
-                    self.add_record(conn_pool.get_connection(), buffer_message)
+                    self.add_record(conn_pool.get_connection(),
+                                    buffer_comments)
                     conn_pool.close()
                 break
             buffer_count += 1
-            buffer_message.append(message)
+            buffer_comments.append(message)
             if buffer_count >= self.flush_count:
-                self.add_record(conn_pool.get_connection(), buffer_message)
+                self.add_record(conn_pool.get_connection(), buffer_comments)
                 buffer_count = 0
 
-    def add_record(self, connecton, buffer_message):
+    def add_record(self, conn, comments):
         """
         Add data to DB
         """
-        pass
+        params_list = []
+        for comment in comments:
+            params = [comment.song_id, comment.user_id, comment.comment_id,
+                      comment.be_replied, comment.content,
+                      comment.comment_time, comment.liked_count]
+            params_list.append(params)
+        conn.write_list(self.__sql_insert, params_list)
 
     def send(self, data):
         """

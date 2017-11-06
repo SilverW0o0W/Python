@@ -231,7 +231,7 @@ class ProxyController(object):
             params_list = (str_available_time, count, 0,)
         result_set = self.db_controller.read(
             sql, params_list, is_main_thread)
-        if (not result_set or len(result_set) < self.__min_available):
+        if not result_set or len(result_set) < self.__min_available:
             pass
         proxy_ip_list = []
         for result in result_set:
