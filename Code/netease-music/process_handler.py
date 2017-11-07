@@ -20,6 +20,8 @@ class ProcessHandler(object):
         self.pipe = Pipe(duplex=False)
         self.is_run = True
 
+    # need process set stop file
+
     def dispose(self):
         """
         Send close message to log process.
