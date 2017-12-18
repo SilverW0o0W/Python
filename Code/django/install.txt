@@ -3,3 +3,11 @@ pip install django==1.10
 django-admin.py startproject HelloWorld
 
 python manage.py runserver
+
+python manage.py migrate
+
+python manage.py makemigrations app_1st
+
+python manage.py sqlmigrate app_1st 0001
+
+python manage.py migrate
