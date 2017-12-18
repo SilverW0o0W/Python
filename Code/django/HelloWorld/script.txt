@@ -1,4 +1,0 @@
-django-admin.py startproject HelloWorld
-python manage.py runserver
-
-python manage.py startapp worldapp

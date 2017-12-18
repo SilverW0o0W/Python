@@ -1,1 +1,5 @@
 pip install django==1.10
+
+django-admin.py startproject HelloWorld
+
+python manage.py runserver
