@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Lyric Exporter</title>
+</head>
+
+<body>
+    {% if welcome %} {{ welcome }} {% endif %}
+    <form action="{% url ''}" method="post">
+        <p>请输入歌曲url</p>
+        <input type="text" name='song_url' />
+        <input type="submit" name="song_submit" value="Submit" />
+    </form>
+</body>
+
+</html>
