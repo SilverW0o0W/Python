@@ -47,4 +47,6 @@ Temporary Items
 .apdisk
 *.pyc
 *\.vscode
+*\.idea
 Code/netease-music/proxy_ip.db
+Code/django/Music/.idea/misc.xml

@@ -19,5 +19,5 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^lrcexporter/', include('lyric_exporter.urls')),
+    url(r'^lrcexporter/', include('lyric_exporter.urls', namespace="lyric_exporter")),
 ]

@@ -4,5 +4,5 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
-    url(r'^export?type=song$', views.export),
+    url(r'^export$', views.export_action, name='export_action'),
 ]
