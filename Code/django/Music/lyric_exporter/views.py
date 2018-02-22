@@ -48,9 +48,16 @@ def export_action(request):
 
 def export_song(exporter, url):
     song_id = utils.match_song_id(url)
+    # try:
+    #     lyric = Lyric.objects.get(song_id=song_id)
+    #     locate_path = lyric.locate_path
+    # except Lyric.DoesNotExist:
+    #     locate_path = None
+    # locate_path = lyric.locate_path
     file_name = exporter.export(song_id)
     lyric = Lyric()
     lyric.song_id = song_id
+    lyric.file_name = file_name[0]
     lyric.locate_path = file_name[1]
     lyric.save()
     return file_name
@@ -70,6 +77,7 @@ def export_playlist(exporter, url):
         for song_id, file_name in path_dict.items():
             lyric = Lyric()
             lyric.song_id = song_id
+            lyric.file_name = file_name[0]
             lyric.locate_path = file_name[1]
             lyric.save()
             short_name = file_name[0].decode('utf-8')
