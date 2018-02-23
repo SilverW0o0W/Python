@@ -2,7 +2,6 @@
 from django.shortcuts import render
 from django.http import FileResponse
 
-from models import Lyric
 from lyric_exporter import LyricExporter
 import spider.music_utils as utils
 import zipfile
@@ -39,8 +38,8 @@ def export_action(request):
     lyric_dir = str.format('{0}/lyric/', download_path)
     exporter = LyricExporter(lyric_dir, name_format=name_format)
     file_name = export_song(exporter, url) if url_type == 'song' else export_playlist(exporter, url)
-    file = open(file_name[1], 'rb')
-    response = FileResponse(file)
+    file_stream = open(file_name[1], 'rb')
+    response = FileResponse(file_stream)
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = str.format('attachment;filename={0}', file_name[0])
     return response
@@ -48,19 +47,7 @@ def export_action(request):
 
 def export_song(exporter, url):
     song_id = utils.match_song_id(url)
-    # try:
-    #     lyric = Lyric.objects.get(song_id=song_id)
-    #     locate_path = lyric.locate_path
-    # except Lyric.DoesNotExist:
-    #     locate_path = None
-    # locate_path = lyric.locate_path
-    file_name = exporter.export(song_id)
-    lyric = Lyric()
-    lyric.song_id = song_id
-    lyric.file_name = file_name[0]
-    lyric.locate_path = file_name[1]
-    lyric.save()
-    return file_name
+    return exporter.export(song_id)
 
 
 def export_playlist(exporter, url):
@@ -75,11 +62,6 @@ def export_playlist(exporter, url):
 
     with zipfile.ZipFile(zip_real_name, 'w') as zip_file:
         for song_id, file_name in path_dict.items():
-            lyric = Lyric()
-            lyric.song_id = song_id
-            lyric.file_name = file_name[0]
-            lyric.locate_path = file_name[1]
-            lyric.save()
             short_name = file_name[0].decode('utf-8')
             long_name = file_name[1].decode('utf-8')
             zip_file.write(long_name, short_name, compress_type=zipfile.ZIP_DEFLATED)

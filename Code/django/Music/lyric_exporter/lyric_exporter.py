@@ -8,6 +8,7 @@ import platform
 from spider import music_utils as utils
 from spider import music_adapter as adapter
 from spider.music_spider import MusicSpider
+from models import Lyric
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -80,10 +81,22 @@ class LyricExporter(object):
             lrc_file.write(lyric)
             return file_name
 
+    def select_file_name(self, song_id):
+        try:
+            lyric = Lyric.objects.get(song_id=song_id)
+            if not os.path.exists(lyric.locate_path):
+                return None
+            return lyric.file_name, lyric.locate_path
+        except Lyric.DoesNotExist:
+            return None
+
     def export(self, song_id, song_info=None, export_dir=None):
         """
         Export song lyric.
         """
+        file_name = self.select_file_name(song_id)
+        if file_name is not None:
+            return file_name
         export_dir = self.export_dir if not export_dir else export_dir
         if not song_info:
             if self.need_info:
@@ -91,16 +104,23 @@ class LyricExporter(object):
                 song_info = adapter.adapt_info(song_id, info_content)
         lyric_content = self.spider.request_lyric(song_id)
         song_lyric = adapter.adapt_lyric(song_id, lyric_content, song_info)
-        return self.create_file(song_lyric, export_dir)
+        file_name = self.create_file(song_lyric, export_dir)
+        lyric = Lyric()
+        lyric.song_id = song_id
+        lyric.file_name = file_name[0]
+        lyric.locate_path = file_name[1]
+        lyric.save()
+        return file_name
 
-    def export_playlist(self, playlist_id, export_dir=None):
+    def export_songs(self, song_list, export_dir=None):
         """
-        Export all songs in playlist
+        Export songs of list
+        :param song_list:List of Song object
+        :param export_dir:Directory of export path
+        :return:Dict of file_name:full_path
         """
-        content = self.spider.request_playlist(playlist_id)
-        playlist = adapter.adapt_playlist(playlist_id, content)
         path_dict = {}
-        for song in playlist.tracks:
+        for song in song_list:
             try:
                 file_name = self.export(song.song_id, song_info=song.info,
                                         export_dir=export_dir)
@@ -109,6 +129,14 @@ class LyricExporter(object):
             except BaseException, ex:
                 print ex.message
         return path_dict
+
+    def export_playlist(self, playlist_id, export_dir=None):
+        """
+        Export all songs in playlist
+        """
+        content = self.spider.request_playlist(playlist_id)
+        playlist = adapter.adapt_playlist(playlist_id, content)
+        return self.export_songs(playlist.tracks, export_dir=export_dir)
 
     def export_url(self, url, playlist=False, export_dir=None):
         """
