@@ -9,6 +9,7 @@ from spider import music_utils as utils
 from spider import music_adapter as adapter
 from spider.music_spider import MusicSpider
 from models import Lyric
+import zipfile
 
 reload(sys)
 sys.setdefaultencoding('utf8')
@@ -34,23 +35,21 @@ class LyricExporter(object):
         self.need_info = need_info
         self.spider = MusicSpider()
 
-    def get_export_path(self, song_info, export_path):
+    def generate_model(self, song_info, export_path):
         """
         Concat lyric file name and export dir path.
         """
-        if not song_info:
-            file_name = str.format(self.extension_name, song_info.song_id)
-        else:
-            is_first = True
-            for artist in song_info.artists[1]:
-                if is_first:
-                    artists_name = artist
-                    is_first = False
-                else:
-                    artists_name += ',' + artist
-            concat_name = str.format(
-                self.name_format, artists_name, song_info.song_name)
-            file_name = str.format(self.extension_name, concat_name)
+        is_first = True
+        for artist in song_info.artists[1]:
+            if is_first:
+                artists_name = artist
+                is_first = False
+            else:
+                artists_name += ',' + artist
+        artists_name = artists_name.decode('utf-8')
+        song_name = song_info.song_name.decode('utf-8')
+        concat_name = str.format(self.name_format, artists_name, song_name)
+        file_name = str.format(self.extension_name, concat_name).decode('utf-8')
         if export_path is not None and export_path.strip() != '':
             export_path = export_path.strip()
             if export_path[-1] != '/' and export_path[-1] != '\\':
@@ -63,6 +62,14 @@ class LyricExporter(object):
                     full_name = export_path + file_name
                 except OSError, e:
                     print e.message
+
+        full_name = full_name.decode('utf-8')
+        lyric_model = Lyric()
+        lyric_model.song_id = song_info.song_id
+        lyric_model.artists = artists_name
+        lyric_model.name = song_name
+        lyric_model.locate_path = full_name
+        lyric_model.save()
         return file_name, full_name
 
     def create_file(self, song_lyric, export_path=None):
@@ -71,22 +78,21 @@ class LyricExporter(object):
         If song info doesn't exist, file name: song_id.lrc
         If song info exists, default file name: artists_name[,] - song_name.lrc
         """
-        file_name = self.get_export_path(song_lyric.info, export_path)
+        file_name = self.generate_model(song_lyric.info, export_path)
         lyric = song_lyric.lyric
         if not lyric:
             return
-        with open(unicode(file_name[1], 'utf-8'), 'w') as lrc_file:
-            if platform.system() == 'Windows':
-                lyric = lyric.encode('mbcs')
+        with open(file_name[1], 'w') as lrc_file:
+            lyric = lyric.encode('mbcs')
             lrc_file.write(lyric)
             return file_name
 
-    def select_file_name(self, song_id):
+    def select_lyric_obejct(self, song_id):
         try:
             lyric = Lyric.objects.get(song_id=song_id)
             if not os.path.exists(lyric.locate_path):
                 return None
-            return lyric.file_name, lyric.locate_path
+            return lyric
         except Lyric.DoesNotExist:
             return None
 
@@ -94,9 +100,12 @@ class LyricExporter(object):
         """
         Export song lyric.
         """
-        file_name = self.select_file_name(song_id)
-        if file_name is not None:
-            return file_name
+        lyric = self.select_lyric_obejct(song_id)
+        if lyric is not None:
+            concat_name = str.format(
+                self.name_format, lyric.artists, lyric.name)
+            file_name = str.format(self.extension_name, concat_name)
+            return file_name, lyric.locate_path
         export_dir = self.export_dir if not export_dir else export_dir
         if not song_info:
             if self.need_info:
@@ -105,11 +114,6 @@ class LyricExporter(object):
         lyric_content = self.spider.request_lyric(song_id)
         song_lyric = adapter.adapt_lyric(song_id, lyric_content, song_info)
         file_name = self.create_file(song_lyric, export_dir)
-        lyric = Lyric()
-        lyric.song_id = song_id
-        lyric.file_name = file_name[0]
-        lyric.locate_path = file_name[1]
-        lyric.save()
         return file_name
 
     def export_songs(self, song_list, export_dir=None):
@@ -130,13 +134,25 @@ class LyricExporter(object):
                 print ex.message
         return path_dict
 
-    def export_playlist(self, playlist_id, export_dir=None):
+    def export_playlist(self, playlist_id, export_dir=None, playlist_dir=None):
         """
         Export all songs in playlist
         """
         content = self.spider.request_playlist(playlist_id)
         playlist = adapter.adapt_playlist(playlist_id, content)
-        return self.export_songs(playlist.tracks, export_dir=export_dir)
+        path_dict = self.export_songs(playlist.tracks, export_dir=export_dir)
+        zip_name = str.format('{0}.zip', playlist_id)
+        zip_real_name = str.format('{0}/{1}', playlist_dir, zip_name)
+
+        if not os.path.isdir(playlist_dir):
+            os.makedirs(playlist_dir)
+
+        with zipfile.ZipFile(zip_real_name, 'w') as zip_file:
+            for song_id, file_name in path_dict.items():
+                short_name = file_name[0].decode('utf-8')
+                long_name = file_name[1].decode('utf-8')
+                zip_file.write(long_name, short_name, compress_type=zipfile.ZIP_DEFLATED)
+        return zip_name, zip_real_name
 
     def export_url(self, url, playlist=False, export_dir=None):
         """
