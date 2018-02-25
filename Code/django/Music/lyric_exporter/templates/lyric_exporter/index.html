@@ -2,8 +2,11 @@
 <html>
 
 <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8"/>
     <title>Lyric Exporter</title>
+    {% if alert %}
+        <script type="text/javascript">alert('{{ alert }}')</script>
+    {% endif %}
 </head>
 
 <body>

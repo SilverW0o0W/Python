@@ -24,8 +24,8 @@ def export_action(request):
     url = request.POST.get('url', None)
     if not url:
         context = {
+            'alert': "Url Invalid!",
             'welcome': "First Page of App Lyric Exporter",
-            'alert': "Url Invalid!"
         }
         return render(request, 'lyric_exporter/index.html', context)
     url_type = request.POST.get('type', 'song')
