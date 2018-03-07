@@ -12,41 +12,43 @@ class CommentWriter(ProcessHandler):
     """
     For writing comment to DB
     """
-    __sql_insert = 'insert into comment(song_id, user_id, comment_id, replied_user_id, replied_content, content, comment_time, liked_count) values(%s, %s, %s, %s, %s, %s, %s, %s)'
+    _sql_insert = 'insert into comment(song_id, user_id, comment_id, replied_user_id, replied_content, content, comment_time, liked_count) values(%s, %s, %s, %s, %s, %s, %s, %s)'
 
     def __init__(self, logger, flush_count=10):
         ProcessHandler.__init__(self)
         self.flush_count = flush_count
         self.logger = logger
-        writer_process = Process(target=self._writing_process,
-                                 args=(self.pipe[0],))
+        writer_process = Process(target=self.writing_process, args=(self.pipe[0],))
         writer_process.start()
+        self.logger.info("Comment writer start. PID: {0}.", writer_process.pid)
 
-    def _writing_process(self, pipe):
+    def writing_process(self, pipe):
         self.logger.info('Writing process start')
         try:
-            conn_pool = ConnectionPool(user='', password='', database='')
+            pool = ConnectionPool(user='', password='', database='', charset='utf8mb4s')
             buffer_comments = []
             buffer_count = 0
             while True:
                 message = pipe.recv()
                 if not message:
                     if buffer_count != 0:
-                        self._add_record(conn_pool, buffer_comments)
-                    conn_pool.close()
+                        self.add_record(pool, buffer_comments)
+                    pool.close()
                     break
                 buffer_count += 1
                 buffer_comments.append(message)
                 if buffer_count >= self.flush_count:
-                    self.logger.debug('start append')
-                    self._add_record(conn_pool, buffer_comments)
+                    self.add_record(pool, buffer_comments)
                     buffer_count = 0
-        except Exception, ex:
+        except BaseException, ex:
             self.logger.error("Writing process error. Reason: {0}.", ex.message)
 
-    def _add_record(self, pool, comments):
+    def add_record(self, pool, comments):
         """
-        Add data to DB
+        Write comment data to db
+        :param pool:ConnectPool
+        :param comments:a list of comments
+        :return:
         """
         try:
             self.logger.debug('Write start.')
@@ -57,7 +59,7 @@ class CommentWriter(ProcessHandler):
                           comment.replied_user_id, comment.replied_content,
                           comment.content, comment.time, comment.liked_count]
                 params_list.append(params)
-            conn.write_list(self.__sql_insert, params_list)
+            conn.write_list(self._sql_insert, params_list)
             del comments[:]
             self.logger.debug('Write complete.')
         except Exception, ex:

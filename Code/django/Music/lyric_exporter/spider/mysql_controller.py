@@ -4,7 +4,7 @@ This file work for controlling mysql
 """
 
 from datetime import datetime
-import mysql.connector
+import mysql.connector as connector
 
 
 class MysqlController(object):
@@ -18,6 +18,7 @@ class MysqlController(object):
         self.database = database
         self.host = host
         self.port = port
+        self.connect_time = datetime.now()
         self.connection = self.connect()
 
     def connect(self):
@@ -27,31 +28,41 @@ class MysqlController(object):
         """
         self.connect_time = datetime.now()
         if self.port:
-            return mysql.connector.connect(user=self.user, password=self.password, database=self.database, host=self.host, port=self.port)
+            return connector.connect(user=self.user, password=self.password, database=self.database,
+                                     host=self.host, port=self.port)
         else:
-            return mysql.connector.connect(user=self.user, password=self.password, database=self.database)
+            return connector.connect(user=self.user, password=self.password, database=self.database)
 
     def close(self):
         """
         Close db connection
         """
-        if self.connection != None:
+        if self.connection is not None:
             self.connection.close()
+
+    def set_encoding(self, charset):
+        """
+        For mysql utf8 emoji
+        """
+        cursor = self.connection.cursor()
+        sql = str.format("SET NAMES {0}", charset)
+        cursor.execute(sql)
+        self.connection.commit()
 
     def write(self, sql, params=None):
         """
         Execute sql. For write.
         """
         cursor = None
-        connect = None
         try:
-            connect = self.connection
-            cursor = connect.cursor()
-            if not params:
-                cursor.execute(sql)
-            else:
-                cursor.execute(sql, params)
-            connect.commit()
+            cursor = self.connection.cursor()
+            cursor.execute(sql) if not params else cursor.execute(sql, params)
+        except connector.DatabaseError, ex:
+            self.connection.rollback()
+            print ex.msg
+            raise ex
+        else:
+            self.connection.commit()
         finally:
             if cursor is not None:
                 cursor.close()
@@ -60,16 +71,15 @@ class MysqlController(object):
         """
         Execute sql. For write.
         """
-        connect = None
         cursor = None
         try:
-            connect = self.connection
-            cursor = connect.cursor()
+            cursor = self.connection.cursor()
             cursor.executemany(sql, params_list)
-            connect.commit()
         except Exception, ex:
-            connect.rollback()
+            self.connection.rollback()
             raise ex
+        else:
+            self.connection.commit()
         finally:
             if cursor is not None:
                 cursor.close()
@@ -78,7 +88,6 @@ class MysqlController(object):
         """
         Execute sql. For read.
         """
-        connect = None
         cursor = None
         try:
             connect = self.connection

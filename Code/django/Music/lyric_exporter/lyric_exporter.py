@@ -86,7 +86,7 @@ class LyricExporter(object):
             lrc_file.write(lyric)
             return file_name
 
-    def select_lyric_obejct(self, song_id):
+    def select_lyric(self, song_id):
         try:
             lyric = Lyric.objects.get(song_id=song_id)
             if not os.path.exists(lyric.locate_path):
@@ -99,7 +99,7 @@ class LyricExporter(object):
         """
         Export song lyric.
         """
-        lyric = self.select_lyric_obejct(song_id)
+        lyric = self.select_lyric(song_id)
         if lyric is not None:
             concat_name = str.format(
                 self.name_format, lyric.artists, lyric.name)

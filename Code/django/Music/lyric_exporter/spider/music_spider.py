@@ -4,6 +4,8 @@ Request music api
 """
 import encrypto
 import requests
+
+
 # from bs4 import BeautifulSoup
 
 
@@ -35,6 +37,11 @@ class MusicSpider(object):
             except requests.RequestException, ex:
                 print ex.message
                 content = None
+            except ValueError, ex:
+                print ex.message
+                content = None
+            except BaseException, ex:
+                print ex.message
         return content
 
     # url = 'http://music.163.com/api/song/detail?ids=[{0}]'

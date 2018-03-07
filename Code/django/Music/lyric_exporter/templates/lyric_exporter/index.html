@@ -4,6 +4,9 @@
 <head>
     <meta charset="utf-8"/>
     <title>Lyric Exporter</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}"/>
+    <script src="{% static "js/bootstrap.min.js" %}"></script>
     {% if alert %}
         <script type="text/javascript">alert('{{ alert }}')</script>
     {% endif %}
@@ -11,21 +14,23 @@
 
 <body>
 {% if welcome %} {{ welcome }} {% endif %}
-<form action="{% url 'lyric_exporter:export_action' %}" method="post">
-    {% csrf_token %}
-    <p>请输入歌曲url</p>
-    <select name="type">
-        <option value="song">歌曲</option>
-        <option value="playlist">歌单</option>
-    </select>
-    <select name="format">
-        <option value="1">歌曲名</option>
-        <option value="2">歌手 - 歌曲名</option>
-        <option value="3">歌曲名 - 歌手</option>
-    </select>
-    <input type="text" name="url"/>
-    <input type="submit" name="song_submit"/>
-</form>
+<div>
+    <form action="{% url 'lyric_exporter:export_action' %}" method="post">
+        {% csrf_token %}
+        <p>请输入歌曲url</p>
+        <select name="type">
+            <option value="song">歌曲</option>
+            <option value="playlist">歌单</option>
+        </select>
+        <select name="format">
+            <option value="1">歌曲名</option>
+            <option value="2">歌手 - 歌曲名</option>
+            <option value="3">歌曲名 - 歌手</option>
+        </select>
+        <input type="text" name="url"/>
+        <input type="submit" name="song_submit"/>
+    </form>
+</div>
 </body>
 
 </html>

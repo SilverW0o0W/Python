@@ -25,36 +25,35 @@ class LoggingController(ProcessHandler):
     Wrapper logging instance.
     """
 
-    def __init__(self, config=None, logger_name=None):
+    def __init__(self, name='log.log', config=None):
         ProcessHandler.__init__(self)
+        self.name = name
         self.config = config
-        self.logger_name = logger_name
-        log_process = Process(target=self._logger_process,
-                              args=(self.pipe[0], self.config, self.logger_name,))
+        log_process = Process(target=self.run_logger,
+                              args=(self.pipe[0], self.name, self.config,))
         log_process.start()
 
-    def _logger_process(self, pipe, config, logger_name):
+    def run_logger(self, pipe, name, config):
         if config:
             logging.config.dictConfig(config)
         else:
-            logging.basicConfig(format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
+            logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                                 datefmt='%d %b %Y %H:%M:%S',
                                 filemode='a',
-                                filename='log.log',
+                                filename=name,
                                 level='DEBUG')
-        logger = logging.getLogger(
-            logger_name) if logger_name else logging.getLogger()
+        logger = logging.getLogger(name) if name else logging.getLogger()
         while True:
             message = pipe.recv()
             if not message:
                 break
             logger.log(message[0], message[1])
 
-    def setLevel(self, level):
-        """
-        Set the logging level of this logger.
-        """
-        pass
+    # def setLevel(self, level):
+    #     """
+    #     Set the logging level of this logger.
+    #     """
+    #     pass
 
     def debug(self, msg, *args, **kwargs):
         """
