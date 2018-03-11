@@ -172,3 +172,11 @@ class LyricExporter(object):
             return self.export_playlist(url_id, export_dir)
         else:
             return self.export(url_id, export_dir)
+
+    def get_song(self, url):
+        song_id = utils.match_song_id(url)
+        return self.export(song_id)
+
+    def get_playlist(self, url, playlist_dir):
+        playlist_id = utils.match_playlist_id(url)
+        return self.export_playlist(playlist_id, playlist_dir=playlist_dir)

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8"/>
+    <title>Lyric Exporter</title>
+    {% load staticfiles %}
+    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}"/>
+    <script src="{% static "js/bootstrap.min.js" %}"></script>
+    {% if alert %}
+        <script type="text/javascript">alert('{{ alert }}')</script>
+    {% endif %}
+</head>
+
+<body>
+<div>
+    <form action="{% url 'basic:display_action' %}" method="post">
+        {% csrf_token %}
+        <p>请输入url</p>
+        <select name="type">
+            <option value="song">歌曲</option>
+            <option value="playlist">歌单</option>
+        </select>
+        <input type="text" name="url"/>
+        <input type="submit" name="song_submit"/>
+    </form>
+</div>
+</body>
+
+</html>

@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'lyric_exporter.apps.LyricExporterConfig',
+    'basic.apps.BasicConfig'
 ]
 
 MIDDLEWARE_CLASSES = [

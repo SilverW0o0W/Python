@@ -37,19 +37,9 @@ def export_action(request):
     }
     name_format = format_dict[format]
     exporter = LyricExporter(lyric_dir, name_format=name_format)
-    file_name = export_song(exporter, url) if url_type == 'song' else export_playlist(exporter, url)
+    file_name = exporter.get_song(url) if url_type == 'song' else exporter.get_playlist(url,playlist_dir)
     file_stream = open(file_name[1], 'rb')
     response = FileResponse(file_stream)
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = str.format('attachment;filename={0}', file_name[0])
     return response
-
-
-def export_song(exporter, url):
-    song_id = utils.match_song_id(url)
-    return exporter.export(song_id)
-
-
-def export_playlist(exporter, url):
-    playlist_id = utils.match_playlist_id(url)
-    return exporter.export_playlist(playlist_id, playlist_dir=playlist_dir)
