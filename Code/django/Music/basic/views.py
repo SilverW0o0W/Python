@@ -1,12 +1,16 @@
 # coding=utf-8
 from django.shortcuts import render
-from spider.music_spider import MusicSpider
+from info_collector import InfoCollector
+
+collector = InfoCollector()
+
 
 # Create your views here.
 def index(request):
     context = {
     }
     return render(request, 'music/index.html', context)
+
 
 def display_action(request):
     url = request.POST.get('url', None)
@@ -15,6 +19,7 @@ def display_action(request):
             'alert': "Url Invalid!",
         }
         return render(request, 'music/index.html', context)
-    url_type = request.POST.get('type', 'song')
-    # file_name = display_song(exporter, url) if url_type == 'song' else export_playlist(exporter, url)
-    return render(request, 'music/index.html')
+    context = collector.request_song(url) if type == 'song' else collector.request_playlist(url)
+    context['display'] = True
+    context['type'] = type
+    return render(request, 'music/index.html', context)

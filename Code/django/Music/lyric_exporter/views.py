@@ -3,7 +3,6 @@ from django.shortcuts import render
 from django.http import FileResponse
 
 from lyric_exporter import LyricExporter
-import spider.music_utils as utils
 
 
 # Create your views here.
@@ -37,7 +36,7 @@ def export_action(request):
     }
     name_format = format_dict[format]
     exporter = LyricExporter(lyric_dir, name_format=name_format)
-    file_name = exporter.get_song(url) if url_type == 'song' else exporter.get_playlist(url,playlist_dir)
+    file_name = exporter.get_song(url) if url_type == 'song' else exporter.get_playlist(url, playlist_dir)
     file_stream = open(file_name[1], 'rb')
     response = FileResponse(file_stream)
     response['Content-Type'] = 'application/octet-stream'

@@ -24,6 +24,18 @@
         <input type="text" name="url"/>
         <input type="submit" name="song_submit"/>
     </form>
+    {% if display %}
+        <div>
+            <p>{{ name }} </p>
+            {% if song %}
+                <p>歌手：{{ artists }}</p>
+                <p>专辑：{{ album }}</p>
+            {% else %}
+                <p>创建：{{ creator }}</p>
+                <p>总计：{{ count }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 </body>
 

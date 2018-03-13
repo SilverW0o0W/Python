@@ -5,6 +5,22 @@ Common method for music
 import re
 
 
+def match_type(url):
+    """
+    Get id type in url
+    :param url:
+    :return:
+    """
+    id_type = 0b0
+    if match_user_id(url) is not None:
+        id_type = id_type | 0b100
+    if match_song_id(url) is not None:
+        id_type = id_type | 0b001
+    elif match_playlist_id(url) is not None:
+        id_type = id_type | 0b010
+    return id_type
+
+
 def match_song_id(url):
     """
     Get song id from url
@@ -37,6 +53,7 @@ def match_id(pattern, url):
     """
     Get id from url
     """
+
     def in_match(pattern, value):
         """
         Match value
@@ -44,6 +61,7 @@ def match_id(pattern, url):
         match = re.search(pattern, value)
         match = None if not match else match.group()
         return match
+
     matched_id = in_match(pattern, url)
     if not matched_id:
         return None
