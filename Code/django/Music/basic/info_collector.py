@@ -32,8 +32,8 @@ class InfoCollector(object):
             else:
                 artists += ',' + artist
         artists = artists.decode('utf-8')
-        context = {
-            'song': True,
+        context = {}
+        context['song'] = {
             'id': info.song_id,
             'name': info.song_name,
             'artists': artists,
@@ -41,15 +41,14 @@ class InfoCollector(object):
         }
         return context
 
-    def request_playlist(self, url):
-        playlist_id = utils.match_playlist_id(url)
+    def request_playlist(self, playlist_id):
         content = self.spider.request_playlist(playlist_id)
         playlist = adapter.adapt_playlist(playlist_id, content)
-        content = {
-            'playlist': True,
+        context = {}
+        context['playlist'] = {
             'id': playlist.playlist_id,
             'name': playlist.name,
             'creator': playlist.creator.nickname,
             'count': playlist.track_count
         }
-        return content
+        return context

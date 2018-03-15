@@ -1,5 +1,7 @@
 # coding=utf-8
 from django.shortcuts import render
+from django.http import HttpResponse
+import json
 from info_collector import InfoCollector
 
 collector = InfoCollector()
@@ -12,14 +14,14 @@ def index(request):
     return render(request, 'music/index.html', context)
 
 
-def display_action(request):
+def detail_action(request):
     url = request.POST.get('url', None)
     if not url:
         context = {
             'alert': "Url Invalid!",
         }
         return render(request, 'music/index.html', context)
-    context = collector.request_song(url) if type == 'song' else collector.request_playlist(url)
-    context['display'] = True
-    context['type'] = type
-    return render(request, 'music/index.html', context)
+    context = collector.request_url(url)
+    if not context:
+        pass
+    return HttpResponse(json.dumps(context, ensure_ascii=False), content_type="application/json")
