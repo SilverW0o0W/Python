@@ -1,42 +1,83 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="zh-CN">
 <head>
-    <meta charset="utf-8"/>
-    <title>Lyric Exporter</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <title>Netease Music</title>
     {% load staticfiles %}
-    <link rel="stylesheet" href="{% static "css/bootstrap.min.css" %}"/>
-    <script src="{% static "js/bootstrap.min.js" %}"></script>
-    {% if alert %}
-        <script type="text/javascript">alert('{{ alert }}')</script>
-    {% endif %}
+    <link href="{% static "music/css/bootstrap.min.css" %}" rel="stylesheet"/>
+    <link href="{% static "music/css/font-awesome.min.css" %}" rel="stylesheet"/>
+    <link href="{% static "music/css/site.min.css" %}" rel="stylesheet"/>
+    <!--[if lt IE 9]>
+    <script src="https://cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://cdn.bootcss.com/respond.js/1.4.2/respond.min.js"></script>
+  <![endif]-->
+    <!--[if IE 9]>
+    <script src="https://cdn.bootcss.com/geopattern/1.2.3/js/base64.min.js"></script>
+    <script src="https://cdn.bootcss.com/geopattern/1.2.3/js/typedarray.min.js"></script>
+  <![endif]-->
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="{% static "music/image/apple-touch-icon.png" %}"/>
+    <link rel="shortcut icon" href="{% static "music/image/favicon.ico" %}"/>
 </head>
-
-<body>
-<div>
-    <form action="{% url 'basic:display_action' %}" method="post">
-        {% csrf_token %}
-        <p>请输入url</p>
-        <select name="type">
-            <option value="song">歌曲</option>
-            <option value="playlist">歌单</option>
-        </select>
-        <input type="text" name="url"/>
-        <input type="submit" name="song_submit"/>
-    </form>
-    {% if display %}
-        <div>
-            <p>{{ name }} </p>
-            {% if song %}
-                <p>歌手：{{ artists }}</p>
-                <p>专辑：{{ album }}</p>
-            {% else %}
-                <p>创建：{{ creator }}</p>
-                <p>总计：{{ count }}</p>
-            {% endif %}
+<body class="home-template">
+<header class="site-header">
+    <nav class="navbar navbar-static-top main-navbar" id="top">
+        <div class="container">
+            <div class="navbar-header"></div>
+            <nav id="bs-navbar" class="collapse navbar-collapse">
+                <ul class="nav navbar-nav navbar-right">
+                    <li><a href="https://github.com/SilverW0o0W/Netease-music/"
+                           onclick="_hmt.push(['_trackEvent', 'main-navbar', 'click', 'api'])" target="_blank">API</a>
+                    </li>
+                    <li><a href="http://www.silvercodingcat.com/"
+                           onclick="_hmt.push(['_trackEvent', 'main-navbar', 'click', 'blog'])" target="_blank">博客</a>
+                    </li>
+                    <li><a href="http://www.bootcdn.cn/#about"
+                           onclick="_hmt.push(['_trackEvent', 'main-navbar', 'click', 'about'])">关于</a></li>
+                </ul>
+            </nav>
         </div>
-    {% endif %}
-</div>
-</body>
+    </nav>
+    <div class="container jumbotron">
+        <div class="row">
+            <div class="col-xs-12">
+                <h1>Netease Music</h1>
+                <p>稳定、快速、免费的前端开源项目 CDN 加速服务<br/><span class="package-amount">共收录了 <strong>3327</strong> 个前端开源项目</span>
+                </p>
+                <div class="search-wraper" role="search">
+                    <div class="form-group">
+                        <input class="form-control search clearable" placeholder="搜索链接" autocomplete="off" autofocus=""
+                               tabindex="0" autocorrect="off" autocapitalize="off" spellcheck="false" id="url"/>
+                        <i class="fa fa-search" id="search-button"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<script type="text/javascript" src="{% static "music/js/jquery-3.3.1.min.js" %}"></script>
+<script>
+    $.ajaxSetup({
+        data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+    });
 
+    function sendUrl() {
+        var url = $("#url").val()
+        $.post("{% url 'basic:detail_action' %}", {"url": url},
+            function (data, status) {
+                alert("Data: " + data['song']['id'] + "\nStatus: " + status);
+            });
+    }
+
+    $("#search-button").click(function () {
+        sendUrl()
+    });
+
+    $("#url").keyup(function (e) {
+        if (e.keyCode == 13) sendUrl()
+    })
+
+</script>
+</body>
 </html>
