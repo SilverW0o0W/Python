@@ -9,7 +9,6 @@ from lyric_exporter import LyricExporter
 
 def index(request):
     context = {
-        'welcome': "First Page of App Lyric Exporter",
     }
     return render(request, 'lyric_exporter/index.html', context)
 
@@ -20,11 +19,9 @@ playlist_dir = str.format('{0}/playlist/', download_path)
 
 
 def export_action(request):
-    url = request.POST.get('url', None)
+    url = request.POST.get('id', None)
     if not url:
         context = {
-            'alert': "Url Invalid!",
-            'welcome': "First Page of App Lyric Exporter",
         }
         return render(request, 'lyric_exporter/index.html', context)
     url_type = request.POST.get('type', 'song')
@@ -42,3 +39,11 @@ def export_action(request):
     response['Content-Type'] = 'application/octet-stream'
     response['Content-Disposition'] = str.format('attachment;filename={0}', file_name[0])
     return response
+
+
+def export_music_action(request):
+    pass
+
+
+def export_playlist_action(request):
+    pass
