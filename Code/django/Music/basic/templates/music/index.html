@@ -43,7 +43,7 @@
         <div class="row">
             <div class="col-xs-12">
                 <h1>Netease Music</h1>
-                <p>稳定、快速、免费的前端开源项目 CDN 加速服务<br/><span class="package-amount">歌曲，歌单url</span></p>
+                <p>稳定、快速、免费的前端开源项目 CDN 加速服务<br/><span class="package-amount">支持歌曲，歌单url</span></p>
                 <div class="search-wraper" role="search">
                     <div class="form-group">
                         <input class="form-control search clearable" placeholder="搜索链接" autocomplete="off" autofocus=""
@@ -54,32 +54,60 @@
             </div>
         </div>
     </div>
-    <div class="list-group packages" id="common-packages">
-        <a href="/bootstrap/" class="package list-group-item" target="_blank" onclick="_hmt.push(['_trackEvent', 'packages', 'click', 'bootstrap'])">
-            <div class="row">
-                <div class="col-md-3"><h4 class="package-name">bootstrap</h4></div>
-                <div class="col-md-9 hidden-xs"><p class="package-description">Bootstrap 是全球最受欢迎的前端组件库，用于开发响应式布局、移动设备优先的 WEB 项目。</p></div>
-                <div class="package-extra-info col-md-9 col-md-offset-3 col-xs-12"><span><i class="fa fa-star"></i> 122699</span></div></div>
-        </a>
-    </div>
+    <div class="list-group packages" id="detail-list"></div>
 </header>
 <script type="text/javascript" src="{% static "music/js/jquery-3.3.1.min.js" %}"></script>
+<script type="text/javascript" src="{% static "music/js/mustache.min.js" %}"></script>
 <script>
+    var _songTemplate = [
+        '<form action="{% url 'basic:export_song_action' %}" method="POST" target="_blank">',
+        '    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />',
+        '    <input type="hidden" name="id" value="[[id]]" />',
+        '    <a href="JavaScript:void(0)" class="package list-group-item">',
+        '        <div class="row">',
+        '           <div class="col-md-3"><h4 class="package-name"><i class="fa fa-music"></i> [[name]]</h4></div>',
+        '           <div class="col-md-9 hidden-xs"><p class="package-description"><i class="fa fa-user"></i> [[artists]]</p></div>',
+        '           <div class="package-extra-info col-md-9 col-md-offset-3 col-xs-12"><i class="fa fa-dot-circle-o"></i> [[album]]</div>',
+        '        </div>',
+        '    </a>',
+        '</form>'
+    ].join('');
+
+    var _playlistTemplate = [].join('');
+
+    Mustache.tags = ['[[', ']]'];
+    Mustache.parse(_songTemplate);
+    Mustache.parse(_playlistTemplate);
+
     $.ajaxSetup({
         data: {csrfmiddlewaretoken: '{{ csrf_token }}'},
+    });
+
+    $('#detail-list').on("click", "form", function () {
+        this.submit();
     });
 
     function sendUrl() {
         var url = $("#url").val()
         $.post("{% url 'basic:detail_action' %}", {"url": url},
             function (data, status) {
-                alert(
-                    "ID: " + data['song']['id'] + "\n" +
-                    "Name: " + data['song']['name'] + "\n" +
-                    "Artists: " + data['song']['artists'] + "\n" +
-                    "Album: " + data['song']['album'] + "\n" +
-                    "Status: " + status
-                );
+                {#alert(#}
+                {#    "ID: " + data['song']['id'] + "\n" +#}
+                {#    "Name: " + data['song']['name'] + "\n" +#}
+                {#    "Artists: " + data['song']['artists'] + "\n" +#}
+                {#    "Album: " + data['song']['album'] + "\n" +#}
+                {#    "Status: " + status#}
+                {#);#}
+                if (data.hasOwnProperty('song')) {
+                    append_template = _songTemplate;
+                    fillData = data['song'];
+                } else if (data.hasOwnProperty('playlist')) {
+                    append_template = _playlistTemplate;
+                    fillData = data['playlist']
+                }
+                var htmlAfterRendered = Mustache.render(append_template, fillData);
+                $('#detail-list').append(htmlAfterRendered)
+                {#alert(htmlAfterRendered)#}
             });
     }
 

@@ -35,7 +35,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'lyric_exporter.apps.LyricExporterConfig',
     'basic.apps.BasicConfig'
 ]
 

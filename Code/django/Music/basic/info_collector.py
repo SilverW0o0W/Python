@@ -30,7 +30,7 @@ class InfoCollector(object):
                 artists = artist
                 is_first = False
             else:
-                artists += ',' + artist
+                artists += '/' + artist
         artists = artists.decode('utf-8')
         context = {}
         context['song'] = {
