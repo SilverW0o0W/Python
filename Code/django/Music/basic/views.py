@@ -29,7 +29,7 @@ def detail_action(request):
     return HttpResponse(json.dumps(context, ensure_ascii=False), content_type="application/json")
 
 
-download_path = 'lyric/download'
+download_path = 'basic/lyric'
 lyric_dir = str.format('{0}/song/', download_path)
 playlist_dir = str.format('{0}/playlist/', download_path)
 
@@ -80,4 +80,22 @@ def export_song_action(request):
 
 
 def export_playlist_action(request):
-    pass
+    playlist_id = request.POST.get('id', None)
+    if not playlist_id:
+        context = {
+        }
+        return render(request, 'music/index.html', context)
+    format = request.POST.get('format', '1')
+    format_dict = {
+        '1': '{1}',
+        '2': '{0} - {1}',
+        '3': '{1} - {0}',
+    }
+    name_format = format_dict[format]
+    exporter = LyricExporter(lyric_dir, name_format=name_format)
+    file_name = exporter.export_playlist(playlist_id, playlist_dir=playlist_dir)
+    file_stream = open(file_name[1], 'rb')
+    response = FileResponse(file_stream)
+    response['Content-Type'] = 'application/octet-stream'
+    response['Content-Disposition'] = str.format('attachment;filename={0}', file_name[0])
+    return response

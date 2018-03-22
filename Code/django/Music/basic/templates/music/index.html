@@ -73,7 +73,19 @@
         '</form>'
     ].join('');
 
-    var _playlistTemplate = [].join('');
+    var _playlistTemplate = [
+        '<form action="{% url 'basic:export_playlist_action' %}" method="POST" target="_blank">',
+        '    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}" />',
+        '    <input type="hidden" name="id" value="[[id]]" />',
+        '    <a href="JavaScript:void(0)" class="package list-group-item">',
+        '        <div class="row">',
+        '           <div class="col-md-3"><h4 class="package-name"><i class="fa fa-th-list"></i> [[name]]</h4></div>',
+        '           <div class="col-md-9 hidden-xs"><p class="package-description"><i class="fa fa-user"></i> [[creator]]</p></div>',
+        '           <div class="package-extra-info col-md-9 col-md-offset-3 col-xs-12"><i class="fa fa-pie-chart"></i> [[count]]</div>',
+        '        </div>',
+        '    </a>',
+        '</form>'
+    ].join('');
 
     Mustache.tags = ['[[', ']]'];
     Mustache.parse(_songTemplate);
@@ -91,13 +103,6 @@
         var url = $("#url").val()
         $.post("{% url 'basic:detail_action' %}", {"url": url},
             function (data, status) {
-                {#alert(#}
-                {#    "ID: " + data['song']['id'] + "\n" +#}
-                {#    "Name: " + data['song']['name'] + "\n" +#}
-                {#    "Artists: " + data['song']['artists'] + "\n" +#}
-                {#    "Album: " + data['song']['album'] + "\n" +#}
-                {#    "Status: " + status#}
-                {#);#}
                 if (data.hasOwnProperty('song')) {
                     append_template = _songTemplate;
                     fillData = data['song'];
