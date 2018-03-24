@@ -30,3 +30,6 @@ def fib(n):
     for i in xrange(n):
         a, b = b, a + b
     return b
+
+# 变态台阶
+fib = lambda n: n if n < 2 else 2 * fib(n - 1)
