@@ -31,5 +31,56 @@ def fib(n):
         a, b = b, a + b
     return b
 
+
 # 变态台阶
 fib = lambda n: n if n < 2 else 2 * fib(n - 1)
+
+# List去重
+
+# 1
+list(set(l))
+
+# 2
+l1 = ['b', 'c', 'd', 'b', 'c', 'a', 'a']
+l2 = {}.fromkeys(l1).keys()
+
+# 3
+l1 = ['b', 'c', 'd', 'b', 'c', 'a', 'a']
+l2 = list(set(l1))
+l2.sort(key=li.index)
+
+# 4
+l1 = ['b', 'c', 'd', 'b', 'c', 'a', 'a']
+l2 = []
+[l2.append(i) for i in l1 if not i in l2]
+
+
+# 链表成对调换
+class ListNode:
+    def __init__(self, x):
+        self.val = x
+        self.next = None
+
+
+class Solution:
+    def swapPairs(self, head):
+        if head != None and head.next != None:
+            next = head.next
+            head.next = self.swapPairs(next.next)
+            next.next = head
+            return next
+        return head
+
+
+# 创建字典
+# 1
+dict = {}
+
+# 2
+items = [('name', 'earth'), ('port', '80')]
+dict2 = dict(items)
+dict1 = dict((['name', 'earth'], ['port', '80']))
+
+# 3
+dict1 = {}.fromkeys(('x', 'y'), -1)
+dict2 = {}.fromkeys(('x', 'y'))
