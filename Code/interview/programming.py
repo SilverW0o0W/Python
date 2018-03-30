@@ -104,3 +104,39 @@ def _recursion_merge_sort(l1, l2, tmp):
 
 def recursion_merge_sort(l1, l2):
     return _recursion_merge_sort(l1, l2, [])
+
+
+# binary search
+
+def binary_search(list, item):
+    low = 0
+    high = len(list) - 1
+    while low <= high:
+        mid = (low + high) / 2
+        if list[mid] < item:
+            low = mid + 1
+        elif list[mid] > item:
+            high = mid - 1
+        else:
+            return mid
+    return
+
+
+# Quicksort
+
+def quicksort(list, low, high):
+    i, j = low, high
+    if i >= j:
+        return list
+    pivot = list[i]
+    while i < j:
+        while i < j and list[j] >= pivot:
+            j = j - 1
+        list[i] = list[j]
+        while i < j and pivot >= list[i]:
+            i = i + 1
+        list[j] = list[i]
+    list[i] = pivot
+    quicksort(list, low, i - 1)
+    quicksort(list, j + 1, high)
+    return list
