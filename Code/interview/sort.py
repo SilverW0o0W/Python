@@ -2,10 +2,10 @@
 
 
 def bubble_sort(nums):
-    for i in range(len(nums)):
+    for i in range(len(nums) - 1):
         for j in range(len(nums) - i - 1):
-            if nums[i] > nums[j]:
-                nums[i], nums[j] = nums[j], nums[i]
+            if nums[j] > nums[j + 1]:
+                nums[j + 1], nums[j] = nums[j], nums[j + 1]
 
 
 def quick_sort(nums):
@@ -27,3 +27,12 @@ def quicksort(nums, low, high):
     nums[i] = key
     quicksort(nums, low, i - 1)
     quicksort(nums, j + 1, high)
+
+
+def select_sort(nums):
+    for i in range(len(nums)):
+        min = i
+        for j in range(i + 1, len(nums)):
+            if nums[min] > nums[j]:
+                min = j
+        nums[min], nums[i] = nums[i], nums[min]
