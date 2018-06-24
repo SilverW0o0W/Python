@@ -36,3 +36,50 @@ def select_sort(nums):
             if nums[min] > nums[j]:
                 min = j
         nums[min], nums[i] = nums[i], nums[min]
+
+
+def insert_sort(nums):
+    for i in range(len(nums)):
+        ins, signal = nums[i], i - 1
+        while signal >= 0 and ins < nums[signal]:
+            nums[signal + 1] = nums[signal]
+            signal -= 1
+        nums[signal + 1] = ins
+
+
+def heap_sort(nums):
+    for start in range((len(nums) - 2) / 2, -1, -1):
+        heap_adjust(nums, start, len(nums) - 1)
+
+    for end in range(len(nums) - 1, 0, -1):
+        nums[0], nums[end] = nums[end], nums[0]
+        heap_adjust(nums, 0, end - 1)
+    return nums
+
+
+def heap_adjust(nums, start, end):
+    root = start
+    while True:
+        child = 2 * root + 1
+        if child > end:
+            break
+        if child + 1 <= end and nums[child] < nums[child + 1]:
+            child += 1
+        if nums[root] < nums[child]:
+            nums[root], nums[child] = nums[child], nums[root]
+            root = child
+        else:
+            break
+
+
+if __name__ == '__main__':
+    nums = [2, 3, 1, 5, 2, 4, 6]
+    try:
+        # bubble_sort(nums)
+        # quick_sort(nums)
+        # select_sort(nums)
+        # insert_sort(nums)
+        heap_sort(nums)
+    except Exception, ex:
+        print(ex)
+    print(nums)
