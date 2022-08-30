@@ -74,12 +74,9 @@ def heap_adjust(nums, start, end):
 
 if __name__ == '__main__':
     nums = [2, 3, 1, 5, 2, 4, 6]
-    try:
-        # bubble_sort(nums)
-        # quick_sort(nums)
-        # select_sort(nums)
-        # insert_sort(nums)
-        heap_sort(nums)
-    except Exception, ex:
-        print(ex)
+    # bubble_sort(nums)
+    # quick_sort(nums)
+    # select_sort(nums)
+    # insert_sort(nums)
+    heap_sort(nums)
     print(nums)
