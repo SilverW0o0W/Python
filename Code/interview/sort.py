@@ -29,6 +29,16 @@ def quicksort(nums, low, high):
     quicksort(nums, j + 1, high)
 
 
+def quick_sort2(nums):
+    if len(nums) < 2:
+        return nums
+    else:
+        p = nums[0]
+        less = [num for num in nums[1:] if num < p]
+        greater = [num for num in nums[1:] if num >= p]
+        return quick_sort2(less) + [p] + quick_sort2(greater)
+
+
 def select_sort(nums):
     for i in range(len(nums)):
         min = i
@@ -76,6 +86,7 @@ if __name__ == '__main__':
     nums = [2, 3, 1, 5, 2, 4, 6]
     # bubble_sort(nums)
     # quick_sort(nums)
+    # nums = print(quick_sort2(nums))
     # select_sort(nums)
     # insert_sort(nums)
     heap_sort(nums)
