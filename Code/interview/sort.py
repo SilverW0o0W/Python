@@ -18,12 +18,11 @@ def quicksort(nums, low, high):
     i, j = low, high
     key = nums[i]
     while i < j:
-        while i < j and nums[j] >= key:
+        while i < j and nums[j] > key:
             j = j - 1
-        nums[i] = nums[j]
         while i < j and nums[i] <= key:
             i = i + 1
-        nums[j] = nums[i]
+        nums[i], nums[j] = nums[j], nums[i]
     nums[i] = key
     quicksort(nums, low, i - 1)
     quicksort(nums, j + 1, high)
@@ -85,9 +84,9 @@ def heap_adjust(nums, start, end):
 if __name__ == '__main__':
     nums = [2, 3, 1, 5, 2, 4, 6]
     # bubble_sort(nums)
-    # quick_sort(nums)
+    quick_sort(nums)
     # nums = print(quick_sort2(nums))
     # select_sort(nums)
     # insert_sort(nums)
-    heap_sort(nums)
+    # heap_sort(nums)
     print(nums)
