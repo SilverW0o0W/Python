@@ -81,8 +81,8 @@ def load_json_file(file_path, fields_dict):
 
 
 def load_json(json_line, fields_dict):
-    def _load_json(json_str, current_level_fields, values):
-        json_obj = json.loads(json_str)
+    def _load_json(json_obj, current_level_fields, values):
+        json_obj = json.loads(json_obj) if isinstance(json_obj, str) else json_obj
         fields = current_level_fields.get(SPECIAL_FIELD, [])
         for field in fields:
             values.append(json_obj.get(field))
