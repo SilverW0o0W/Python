@@ -30,6 +30,10 @@ def send_email_with_attachment(smtp_server, smtp_port, username, password, to_em
     attachment_files = [os.path.join(attachment_path, f) for f in os.listdir(attachment_path)]
 
     for file_path in attachment_files:
+        # 校验文件扩展名 PDF、DOC、DOCX、TXT、RTF、HTM、HTML、PNG、GIF、JPG、JPEG、BMP、EPUB
+        if not file_path.lower().endswith(('.pdf', '.doc', '.docx', '.txt', '.rtf', '.htm', '.html', '.png', '.gif', '.jpg', '.jpeg', '.bmp', '.epub')):
+            continue
+
         if os.path.isfile(file_path):  # 确保是文件而不是目录
             add_attachment(msg, file_path)
 
@@ -52,8 +56,6 @@ def add_attachment(msg, file_path):
         encoders.encode_base64(part)
         # 添加附件头信息 处理附件名中文乱码
         part.add_header('Content-Disposition','attachment', filename=('utf-8', '', Header(file_path.split("/")[-1], 'utf-8').encode()))
-        # part.add_header('Content-Disposition', f'attachment; filename={file_path.split("/")[-1]}')
-
         msg.attach(part)
 
 
